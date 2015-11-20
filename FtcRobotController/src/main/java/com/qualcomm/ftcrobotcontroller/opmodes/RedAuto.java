@@ -308,4 +308,3 @@ public class RedAuto extends OpMode {
             return false;
         }
     }
-}
