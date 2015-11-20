@@ -63,9 +63,10 @@ public class FtcOpModeRegister implements OpModeRegister {
     manager.register("Blue Auto", RealTalkAutoBlue.class);
     manager.register("Gyro Auto", GyroTestOp.class);
 
-    manager.register("Test Tele OP", TestTeleOP.class);
+    manager.register("USE THIS TELEOP", TestTeleOP.class);
     manager.register("Super Auto", RedAuto.class);
     manager.register("Fourm Auto", FourmAuto.class);
+
 
 
 
