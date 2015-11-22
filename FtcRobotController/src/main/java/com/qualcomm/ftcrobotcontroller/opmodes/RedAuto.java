@@ -10,7 +10,8 @@ import com.qualcomm.robotcore.hardware.DeviceInterfaceModule;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.util.concurrent.locks.Lock;
+
+import static java.lang.Thread.sleep;
 
 /**
  * Created by Robotics on 12/2/2015.
