@@ -11,8 +11,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-import static java.lang.Thread.sleep;
-
 /**
  * Created by Robotics on 12/2/2015.
  */
@@ -138,16 +136,27 @@ public class RedAuto extends OpMode {
     }
 
     @Override
-    public void init_loop() {
+    void stop_motors(){
+        run_motors(0, 0);
         resetEncoders();
     }
 
-    @Override
-    public void start() {
-        if (!testState) utterState = someStates.Idle;
-        else utterState = testingState;
-        runToPosition();
-        setEncoderTarget(0, 0);
+    void run_motors_until(int lPower, int rPower, int distance){
+        int lDistance, rDistance;
+        if(lPower > 0) lDistance = distance;
+        else lDistance = -distance;
+        
+        if(rPower > 0) rDistance = distance;
+        else rDistance = -distance;
+        runToPosition(lDistance, rDistance);
+        run_motors(lPower, rPower);
+    }
+
+    void bSleep(long time){
+        try {
+            sleep(time);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
     }
 
 
