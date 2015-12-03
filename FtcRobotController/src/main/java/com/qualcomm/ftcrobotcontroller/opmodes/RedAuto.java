@@ -201,21 +201,21 @@ public class RedAuto extends OpMode
     }
 
     void bSleep(long time){
-        try {
-            sleep(time);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        //try {
+            //sleep(time);
+        //} catch (InterruptedException e) {
+        //    e.printStackTrace();
+        //}
 
     }
 
     void turn_left_until(double power, double distance){
-        runToPosition(distance, -distance);
+        //runToPosition(distance, -distance);
         run_motors(power, -power);
     }
 
     void turn_right_until(double power, double distance){
-        runToPosition(-distance, distance);
+        //runToPosition(-distance, distance);
         run_motors(-power, power);
     }
 
