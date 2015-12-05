@@ -98,6 +98,24 @@ public class StateMachineAuto extends OpMode {
 
     //DeviceInterfaceModule dim;
 
+    // GYRO STUFF
+    public static final int GYRO_ADDRESS = 0x68;
+
+    // These byte values are common with most Modern Robotics sensors.
+    public static final int READ_MODE = 0x80;
+    public static final int ADDRESS_MEMORY_START = 0x0;
+    public static final int TOTAL_MEMORY_LENGTH = 0x0c;
+    public static final int BUFFER_CHANGE_ADDRESS_LENGTH = 0x03;
+
+    int gyro_port = 5;
+
+    byte[] readCache;
+    Lock readLock;
+    byte[] writeCache;
+    Lock writeLock;
+
+    DeviceInterfaceModule dim;
+
     @Override
     public void init() {
         superPath = new path();
