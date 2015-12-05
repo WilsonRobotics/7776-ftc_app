@@ -4,13 +4,17 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
-import com.qualcomm.robotcore.util.Util;
+import com.qualcomm.robotcore.hardware.DeviceInterfaceModule;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import java.util.concurrent.locks.Lock;
 
 /**
  * Created by Robotics on 12/2/2015.
  */
 public class StateMachineAuto extends OpMode {
 
+    ElapsedTime time;
     DcMotor front_left;
     DcMotor front_right;
     DcMotor back_left;
@@ -59,6 +63,24 @@ public class StateMachineAuto extends OpMode {
     colorSens color_sensor = new colorSens(true); //true for red
     boolean firstCall=true;
 
+    // GYRO STUFF
+    public static final int GYRO_ADDRESS = 0x68;
+
+    // These byte values are common with most Modern Robotics sensors.
+    public static final int READ_MODE = 0x80;
+    public static final int ADDRESS_MEMORY_START = 0x0;
+    public static final int TOTAL_MEMORY_LENGTH = 0x0c;
+    public static final int BUFFER_CHANGE_ADDRESS_LENGTH = 0x03;
+
+    int gyro_port = 5;
+
+    byte[] readCache;
+    Lock readLock;
+    byte[] writeCache;
+    Lock writeLock;
+
+    DeviceInterfaceModule dim;
+
     @Override
     public void init() {
         //specify configuration name save from scan operation
@@ -75,6 +97,14 @@ public class StateMachineAuto extends OpMode {
         color.enableLed(true);
 
         setDrivePower(0, 0);
+
+        dim = hardwareMap.deviceInterfaceModule.get("dim");
+
+        readCache = dim.getI2cReadCache(gyro_port);
+        writeCache = dim.getI2cWriteCache(gyro_port);
+
+        // wake up the gyro
+        performAction("write", gyro_port, GYRO_ADDRESS, );
     }
 
     @Override
@@ -374,5 +404,14 @@ public class StateMachineAuto extends OpMode {
         }
     }
 
+    // perform I2C read/write action
+    private void performAction(String actionName, int port, int i2cAddress, int memAddress, int memLength) {
+        if (actionName.equalsIgnoreCase("read")) dim.enableI2cReadMode(port, i2cAddress, memAddress, memLength);
+        if (actionName.equalsIgnoreCase("write")) dim.enableI2cWriteMode(port, i2cAddress, memAddress, memLength);
+
+        dim.setI2cPortActionFlag(port);
+        dim.writeI2cCacheToController(port);
+        dim.readI2cCacheFromController(port);
+    }
 
 }
