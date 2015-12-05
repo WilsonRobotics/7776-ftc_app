@@ -28,6 +28,8 @@ public class StateMachineAuto extends OpMode {
     path superPath;
     boolean firstCall=true;
 
+    ColorSensor color;
+
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
     private static final String back_left_name = "back_left";
@@ -251,6 +253,13 @@ public class StateMachineAuto extends OpMode {
         front_right.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
         //back_left.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
         //back_right.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+    }
+
+    void runNormal(){
+        front_left.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        front_right.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        back_left.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        back_right.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
     }
 
     int getLeftEncoders(){
