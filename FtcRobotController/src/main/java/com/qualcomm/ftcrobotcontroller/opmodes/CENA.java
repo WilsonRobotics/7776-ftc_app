@@ -1,12 +1,16 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
-        import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-        import com.qualcomm.robotcore.hardware.DcMotor;
+
+import android.content.Context;
+import android.media.MediaPlayer;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 /**
  * Created by Robotics on 10/28/2015.
  */
 
-public class TestTeleOP extends OpMode {
+public class CENA extends OpMode {
     DcMotor frontLeftMotor; //motor declarations, actual motor names will be later on
     DcMotor frontRightMotor;
     DcMotor backLeftMotor;
@@ -15,6 +19,8 @@ public class TestTeleOP extends OpMode {
     DcMotor tapeMotor;
     DcMotor hookMotor;
     DcMotor sweepMotor;
+
+    MediaPlayer mp=new MediaPlayer();
 
     private static final String frontLeft =  "front_left";  //motor name defines
     private static final String frontRight = "front_right";
@@ -39,8 +45,12 @@ public class TestTeleOP extends OpMode {
     private static final double sweepPowerDown = -1.0;
 
     //constructor
-    public TestTeleOP() {
-        //nope
+    public CENA() {
+        try{
+            mp.setDataSource("/storage/emulated/0/JOHNCENA.mp3");//Write your location here
+            mp.prepare();
+        }catch(Exception e){e.printStackTrace();}
+
     }
 
     //copy pasted from k9TeleOP
@@ -68,6 +78,11 @@ public class TestTeleOP extends OpMode {
         // set the gamepad 2 dead zone to 0
         gamepad2.setJoystickDeadzone(0.0f);
 
+    }
+
+    @Override
+    public void start(){
+        mp.start();
     }
 
     @Override
@@ -131,6 +146,7 @@ public class TestTeleOP extends OpMode {
     @Override
     public void stop() {
         telemetry.addData("Text", "****ROBOT IS STOPPED****");
+        mp.stop();
     }
 
 
