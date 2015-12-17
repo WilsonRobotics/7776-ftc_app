@@ -1,6 +1,7 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
         import com.qualcomm.robotcore.eventloop.opmode.OpMode;
         import com.qualcomm.robotcore.hardware.DcMotor;
+        import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * Created by Robotics on 10/28/2015.
@@ -9,19 +10,15 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 public class TestTeleOP extends OpMode {
     DcMotor frontLeftMotor; //motor declarations, actual motor names will be later on
     DcMotor frontRightMotor;
-    DcMotor backLeftMotor;
-    DcMotor backRightMotor;
-    DcMotor bucketMotor;
     DcMotor tapeMotor;
-    DcMotor hookMotor;
-    DcMotor sweepMotor;
-
+    Servo claw;
     private static final String frontLeft =  "front_left";  //motor name defines
     private static final String frontRight = "front_right";
     private static final String backLeft = "back_left";
     private static final String backRight = "back_right";
     private static final String bucketName = "bucket";
     private static final String tapeName = "tape";
+    private static final String clawName = "claw";
     private static final String hookName = "hook";
     private static final String sweepName = "sweep";
 
@@ -49,19 +46,13 @@ public class TestTeleOP extends OpMode {
 
         frontLeftMotor = hardwareMap.dcMotor.get(frontLeft);
         frontRightMotor = hardwareMap.dcMotor.get(frontRight);
-        backRightMotor = hardwareMap.dcMotor.get(backLeft);
-        backLeftMotor = hardwareMap.dcMotor.get(backRight);
-        bucketMotor = hardwareMap.dcMotor.get(bucketName);
         tapeMotor = hardwareMap.dcMotor.get(tapeName);
-        hookMotor = hardwareMap.dcMotor.get(hookName);
-        sweepMotor = hardwareMap.dcMotor.get(sweepName);
+        //          claw = hardwareMap.servo.get(clawName);
 
         frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor.setDirection(DcMotor.Direction.REVERSE);
-        hookMotor.setDirection(DcMotor.Direction.REVERSE);
         //arm = hardwareMap.servo.get("servo_1");
         //claw = hardwareMap.servo.get("servo_6");
 
@@ -95,26 +86,12 @@ public class TestTeleOP extends OpMode {
         float rightThrottle = gamepad1.right_stick_y;
 
         // write the values to the motors
-        backLeftMotor.setPower(leftThrottle * backMotorMultiple);
         frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
-        backRightMotor.setPower(rightThrottle * backMotorMultiple);
         frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
         // update the position of everything else
-        if(gamepad2.left_trigger > triggerThresh) tapeMotor.setPower(gamepad2.left_trigger);
-        else if(gamepad2.right_trigger > triggerThresh) tapeMotor.setPower(-gamepad2.right_trigger);
+        if(gamepad1.left_trigger > triggerThresh) tapeMotor.setPower(gamepad1.left_trigger);
+        else if(gamepad1.right_trigger > triggerThresh) tapeMotor.setPower(-gamepad1.right_trigger);
         else tapeMotor.setPower(0);
-
-        if(gamepad2.right_bumper) hookMotor.setPower(hookPowerDown);
-        else if(gamepad2.left_bumper) hookMotor.setPower(hookPowerUp);
-        else hookMotor.setPower(0);
-
-        if(gamepad1.a) bucketMotor.setPower(bucketPowerUp);
-        else if (gamepad1.b) bucketMotor.setPower(bucketPowerDown);
-        else bucketMotor.setPower(0);
-
-        if(gamepad1.left_bumper)  sweepMotor.setPower(sweepPowerUp);
-        else if (gamepad1.right_bumper) sweepMotor.setPower(sweepPowerDown);
-        else sweepMotor.setPower(0);
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method

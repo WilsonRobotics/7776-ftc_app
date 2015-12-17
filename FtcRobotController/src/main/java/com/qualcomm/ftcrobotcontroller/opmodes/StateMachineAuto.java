@@ -30,6 +30,14 @@ public class StateMachineAuto extends OpMode {
 
     ColorSensor color;
 
+    State utterState;
+    path superPath;
+    colorSens color_sensor;
+    boolean firstCall=true;
+    boolean colorWorks=true;
+
+
+
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
     private static final String back_left_name = "back_left";
@@ -114,7 +122,7 @@ public class StateMachineAuto extends OpMode {
     byte[] writeCache;
     Lock writeLock;
 
-    DeviceInterfaceModule dim;
+    //DeviceInterfaceModule dim;
 
     @Override
     public void init() {
