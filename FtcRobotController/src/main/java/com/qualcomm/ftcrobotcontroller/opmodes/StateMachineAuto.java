@@ -17,10 +17,17 @@ public class StateMachineAuto extends OpMode {
     ElapsedTime time;
     DcMotor front_left;
     DcMotor front_right;
-    DcMotor back_left;
-    DcMotor back_right;
-
+    //DcMotor back_left;
+    //DcMotor back_right;
     ColorSensor color;
+
+    State utterState;
+    path superPath;
+    colorSens color_sensor;
+    boolean firstCall=true;
+    boolean colorWorks=true;
+
+
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -58,10 +65,6 @@ public class StateMachineAuto extends OpMode {
     private final pathPart driveUpMountain[] = {
             new pathPart(1000, 1000, 1, 1)
     };
-    State utterState;
-    path superPath;
-    colorSens color_sensor = new colorSens(true); //true for red
-    boolean firstCall=true;
 
     // GYRO STUFF
     public static final int GYRO_ADDRESS = 0x68;
@@ -79,32 +82,41 @@ public class StateMachineAuto extends OpMode {
     byte[] writeCache;
     Lock writeLock;
 
-    DeviceInterfaceModule dim;
+    //DeviceInterfaceModule dim;
 
     @Override
     public void init() {
+        color_sensor = new colorSens();
+        superPath = new path();
+        utterState = new State();
         //specify configuration name save from scan operation
         front_left = hardwareMap.dcMotor.get(front_left_name);
         front_right = hardwareMap.dcMotor.get(front_right_name);
-        back_left = hardwareMap.dcMotor.get(back_left_name);
-        back_right = hardwareMap.dcMotor.get(back_right_name);
-        color = hardwareMap.colorSensor.get(color_sensor_name);
+        //back_left = hardwareMap.dcMotor.get(back_left_name);
+        //back_right = hardwareMap.dcMotor.get(back_right_name);
+        try{
+            color = hardwareMap.colorSensor.get(color_sensor_name);
+        }
+        catch(Exception stuff){
+            telemetry.addData("Color off", "color off");
+            colorWorks=false;
+        }
 
         //set servo positions later
 
         front_right.setDirection(DcMotor.Direction.REVERSE);
-        back_right.setDirection(DcMotor.Direction.REVERSE);
-        color.enableLed(true);
+        //back_right.setDirection(DcMotor.Direction.REVERSE);
+        color_sensor.begin(true);
 
         setDrivePower(0, 0);
 
-        dim = hardwareMap.deviceInterfaceModule.get("dim");
+        //dim = hardwareMap.deviceInterfaceModule.get("dim");
 
-        readCache = dim.getI2cReadCache(gyro_port);
-        writeCache = dim.getI2cWriteCache(gyro_port);
+        //readCache = dim.getI2cReadCache(gyro_port);
+        //writeCache = dim.getI2cWriteCache(gyro_port);
 
         // wake up the gyro
-        performAction("write", gyro_port, GYRO_ADDRESS, );
+        //performAction("write", gyro_port, GYRO_ADDRESS, );
     }
 
     @Override
@@ -124,7 +136,6 @@ public class StateMachineAuto extends OpMode {
     public void loop() {
         switch (utterState.getState()){
             case Idle:
-                resetEncoders();
                 if(getLeftEncoders() == 0 && getRightEncoders() == 0) utterState.setState(someStates.DrivingToBox);
                 else{
                     resetEncoders();
@@ -245,44 +256,44 @@ public class StateMachineAuto extends OpMode {
     void setDrivePower(double left, double right){
         front_left.setPower(left);
         front_right.setPower(right);
-        back_left.setPower(left);
-        back_right.setPower(right);
+        //back_left.setPower(left);
+        //back_right.setPower(right);
     }
 
     void resetEncoders(){
-        front_left.setChannelMode(DcMotorController.RunMode.RESET_ENCODERS);
-        front_right.setChannelMode(DcMotorController.RunMode.RESET_ENCODERS);
-        back_left.setChannelMode(DcMotorController.RunMode.RESET_ENCODERS);
-        back_right.setChannelMode(DcMotorController.RunMode.RESET_ENCODERS);
+        front_left.setMode(DcMotorController.RunMode.RESET_ENCODERS);
+        front_right.setMode(DcMotorController.RunMode.RESET_ENCODERS);
+        //back_left.setMode(DcMotorController.RunMode.RESET_ENCODERS);
+        //back_right.setMode(DcMotorController.RunMode.RESET_ENCODERS);
     }
 
     void runToPosition(){
-        front_left.setChannelMode(DcMotorController.RunMode.RUN_TO_POSITION);
-        front_right.setChannelMode(DcMotorController.RunMode.RUN_TO_POSITION);
-        back_left.setChannelMode(DcMotorController.RunMode.RUN_TO_POSITION);
-        back_right.setChannelMode(DcMotorController.RunMode.RUN_TO_POSITION);
+        front_left.setMode(DcMotorController.RunMode.RUN_TO_POSITION);
+        front_right.setMode(DcMotorController.RunMode.RUN_TO_POSITION);
+        //back_left.setMode(DcMotorController.RunMode.RUN_TO_POSITION);
+        //back_right.setMode(DcMotorController.RunMode.RUN_TO_POSITION);
     }
 
     void runNormal(){
-        front_left.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
-        front_right.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
-        back_left.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
-        back_right.setChannelMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        front_left.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        front_right.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        //back_left.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
+        //back_right.setMode(DcMotorController.RunMode.RUN_WITHOUT_ENCODERS);
     }
 
     int getLeftEncoders(){
-        return Math.abs((front_left.getCurrentPosition() + back_left.getCurrentPosition()) / 2);
+        return Math.abs((front_left.getCurrentPosition())); //+ back_left.getCurrentPosition()) / 2);
     }
 
     int getRightEncoders(){
-        return Math.abs((front_right.getCurrentPosition()+back_right.getCurrentPosition())/2);
+        return Math.abs((front_right.getCurrentPosition())); //+back_right.getCurrentPosition())/2);
     }
 
     void setEncoderTarget(int left, int right){
         front_left.setTargetPosition(left);
         front_right.setTargetPosition(right);
-        back_left.setTargetPosition(left);
-        back_right.setTargetPosition(right);
+        //back_left.setTargetPosition(left);
+        //back_right.setTargetPosition(right);
     }
 
     private class pathPart{
@@ -300,21 +311,24 @@ public class StateMachineAuto extends OpMode {
     }
 
     private class path{
-        boolean motorsSet;
         boolean pathSet;
         private pathPart currentPath[];
-        private int currentSeg;
+        private int currentSeg = -1;
 
 
         public void begin(pathPart runPath[]){
             currentPath=runPath;
             currentSeg=0;
+            telemetry.addData("Begining Path", 0);
+            runToPosition();
+            setEncoderTarget(currentPath[currentSeg].leftDistance, currentPath[currentSeg].rightDistance);
+            setDrivePower(currentPath[currentSeg].leftPower, currentPath[currentSeg].rightPower);
+            telemetry.addData("Motors Set!", currentPath[currentSeg].leftDistance);
         }
 
         public boolean update(){
             if(currentSeg!=-1){
                 if(getLeftEncoders() > currentPath[currentSeg].leftDistance && getRightEncoders() > currentPath[currentSeg].rightDistance){
-                    motorsSet=false;
                     setEncoderTarget(0, 0);
                     setDrivePower(0, 0);
                     resetEncoders();
@@ -322,11 +336,6 @@ public class StateMachineAuto extends OpMode {
                     if(currentSeg>currentPath.length) {
                         currentSeg = -1;
                     }
-                }
-                else if(!motorsSet) {
-                    runToPosition();
-                    setEncoderTarget(currentPath[currentSeg].leftDistance, currentPath[currentSeg].rightDistance);
-                    setDrivePower(currentPath[currentSeg].leftPower, currentPath[currentSeg].rightPower);
                 }
                 return true;
             }
@@ -386,17 +395,21 @@ public class StateMachineAuto extends OpMode {
         private movingAvg ret;
         private boolean redOrBlue;
 
-        colorSens(boolean red){
-            redOrBlue=red;
+        public void begin(boolean red) {
+            ret = new movingAvg();
+            redOrBlue = red;
             ret.reset();
+            if(colorWorks) color.enableLed(true);
         }
-        boolean checkColor(){
-            if(redOrBlue){
-                return ret.checkThreshold(color.red(), red_thresh);
+        boolean checkColor() {
+            if (colorWorks) {
+                if (redOrBlue) {
+                    return ret.checkThreshold(color.red(), red_thresh);
+                } else {
+                    return ret.checkThreshold(color.blue(), blue_thresh);
+                }
             }
-            else{
-                return ret.checkThreshold(color.blue(), blue_thresh);
-            }
+            else return true;
         }
 
         public void reset(){
@@ -405,13 +418,13 @@ public class StateMachineAuto extends OpMode {
     }
 
     // perform I2C read/write action
-    private void performAction(String actionName, int port, int i2cAddress, int memAddress, int memLength) {
-        if (actionName.equalsIgnoreCase("read")) dim.enableI2cReadMode(port, i2cAddress, memAddress, memLength);
-        if (actionName.equalsIgnoreCase("write")) dim.enableI2cWriteMode(port, i2cAddress, memAddress, memLength);
-
-        dim.setI2cPortActionFlag(port);
-        dim.writeI2cCacheToController(port);
-        dim.readI2cCacheFromController(port);
-    }
+    //private void performAction(String actionName, int port, int i2cAddress, int memAddress, int memLength) {
+    //    if (actionName.equalsIgnoreCase("read")) dim.enableI2cReadMode(port, i2cAddress, memAddress, memLength);
+    //    if (actionName.equalsIgnoreCase("write")) dim.enableI2cWriteMode(port, i2cAddress, memAddress, memLength);
+    //
+    //    dim.setI2cPortActionFlag(port);
+    //    dim.writeI2cCacheToController(port);
+    //    dim.readI2cCacheFromController(port);
+    //}
 
 }
