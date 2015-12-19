@@ -12,22 +12,21 @@ import java.util.concurrent.locks.Lock;
 /**
  * Created by Robotics on 12/2/2015.
  */
+
 public class StateMachineAuto extends OpMode {
+    private static final boolean testState = false;
+    private static final someStates testingState = someStates.DrivingToBox;
+
 
     ElapsedTime time;
     DcMotor front_left;
     DcMotor front_right;
     //DcMotor back_left;
     //DcMotor back_right;
-    ColorSensor color;
 
-    State utterState;
+    someStates utterState;
     path superPath;
-    colorSens color_sensor;
     boolean firstCall=true;
-    boolean colorWorks=true;
-
-
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -66,6 +65,19 @@ public class StateMachineAuto extends OpMode {
             new pathPart(1000, 1000, 1, 1)
     };
 
+    public enum someStates{
+        Idle,
+        DrivingToBox,
+        DrivingToWall,
+        DropClimbers,
+        DrivingTowardsMountain,
+        KnockClimber,
+        DrivingUpMountain,
+        PlayingSound,
+        End,
+        Null
+    }
+
     // GYRO STUFF
     public static final int GYRO_ADDRESS = 0x68;
 
@@ -86,27 +98,17 @@ public class StateMachineAuto extends OpMode {
 
     @Override
     public void init() {
-        color_sensor = new colorSens();
         superPath = new path();
-        utterState = new State();
         //specify configuration name save from scan operation
         front_left = hardwareMap.dcMotor.get(front_left_name);
         front_right = hardwareMap.dcMotor.get(front_right_name);
         //back_left = hardwareMap.dcMotor.get(back_left_name);
         //back_right = hardwareMap.dcMotor.get(back_right_name);
-        try{
-            color = hardwareMap.colorSensor.get(color_sensor_name);
-        }
-        catch(Exception stuff){
-            telemetry.addData("Color off", "color off");
-            colorWorks=false;
-        }
 
         //set servo positions later
 
         front_right.setDirection(DcMotor.Direction.REVERSE);
         //back_right.setDirection(DcMotor.Direction.REVERSE);
-        color_sensor.begin(true);
 
         setDrivePower(0, 0);
 
@@ -126,7 +128,8 @@ public class StateMachineAuto extends OpMode {
 
     @Override
     public void start() {
-        utterState.setState(someStates.Idle);
+        if(!testState) utterState = someStates.Idle;
+        else utterState = testingState;
         runToPosition();
         setEncoderTarget(0, 0);
     }
@@ -134,9 +137,9 @@ public class StateMachineAuto extends OpMode {
 
     @Override
     public void loop() {
-        switch (utterState.getState()){
+        switch (utterState){
             case Idle:
-                if(getLeftEncoders() == 0 && getRightEncoders() == 0) utterState.setState(someStates.DrivingToBox);
+                if(getLeftEncoders() == 0 && getRightEncoders() == 0) utterState = someStates.DrivingToBox;
                 else{
                     resetEncoders();
                     telemetry.addData("Encoders Not Zero!" ,String.format("L:R %d:%d", getLeftEncoders(), getRightEncoders()));
@@ -149,24 +152,8 @@ public class StateMachineAuto extends OpMode {
                     firstCall=false;
                 }
                 else if(!superPath.update()){
-                    utterState.setState(someStates.DetectColorFirst);
+                    utterState = someStates.DrivingToWall;
                     firstCall=true;
-                }
-                break;
-            case DetectColorFirst:
-                if(firstCall){
-                    color_sensor.reset();
-                    runNormal();
-                    setDrivePower(0.2, 0.2);
-                    for(int i=0; i<moving_avg_amount; i++){
-                        color_sensor.checkColor();
-                    }
-                    firstCall=false;
-                }
-                else if(color_sensor.checkColor()){
-                    setDrivePower(0,0);
-                    firstCall=false;
-                    utterState.setState(someStates.DrivingToWall);
                 }
                 break;
             case DrivingToWall:
@@ -176,29 +163,13 @@ public class StateMachineAuto extends OpMode {
                     firstCall=false;
                 }
                 else if(!superPath.update()){
-                    utterState.setState(someStates.DropClimbers);
+                    utterState = someStates.DropClimbers;
                     firstCall=true;
                 }
                 break;
             case DropClimbers:
                 //servo stuff TODO
-                utterState.setState(someStates.DetectColorSec);
-                break;
-            case DetectColorSec:
-                if(firstCall){
-                    color_sensor.reset();
-                    runNormal();
-                    setDrivePower(-0.2, -0.2);
-                    for(int i=0; i<moving_avg_amount; i++){
-                        color_sensor.checkColor();
-                    }
-                    firstCall=false;
-                }
-                else if(color_sensor.checkColor()){
-                    setDrivePower(0,0);
-                    firstCall=false;
-                    utterState.setState(someStates.DrivingUpMountain);
-                }
+                utterState = someStates.DrivingTowardsMountain;
                 break;
             case DrivingTowardsMountain:
                 if(firstCall){
@@ -207,7 +178,7 @@ public class StateMachineAuto extends OpMode {
                     firstCall=false;
                 }
                 else if(!superPath.update()){
-                    utterState.setState(someStates.KnockClimber);
+                    utterState = someStates.KnockClimber;
                     firstCall=true;
                 }
                 break;
@@ -219,7 +190,7 @@ public class StateMachineAuto extends OpMode {
                     firstCall=false;
                 }
                 else if(!superPath.update()){
-                    utterState.setState(someStates.DrivingUpMountain);
+                    utterState = someStates.DrivingUpMountain;
                     firstCall=true;
                 }
                 break;
@@ -230,13 +201,13 @@ public class StateMachineAuto extends OpMode {
                     firstCall=false;
                 }
                 else if(!superPath.update()){
-                    utterState.setState(someStates.PlayingSound);
+                    utterState = someStates.PlayingSound;
                     firstCall=true;
                 }
                 break;
             case PlayingSound:
                 //TODO: Sound code
-                utterState.setState(someStates.End);
+                utterState = someStates.End;
                 break;
             case End:
                 runNormal();
@@ -244,7 +215,8 @@ public class StateMachineAuto extends OpMode {
                 telemetry.addData("ALL DONE!", 0);
                 break;
         }
-        telemetry.addData("State: ", utterState.getState());
+        telemetry.addData("State: ", utterState);
+        if(testState && utterState != testingState) utterState = someStates.End;
     }
 
     @Override
@@ -343,33 +315,6 @@ public class StateMachineAuto extends OpMode {
         }
     }
 
-    public enum someStates{
-        Idle,
-        DrivingToBox,
-        DetectColorFirst,
-        DrivingToWall,
-        DropClimbers,
-        DetectColorSec,
-        DrivingTowardsMountain,
-        KnockClimber,
-        DrivingUpMountain,
-        PlayingSound,
-        End,
-        Null
-    }
-
-    private class State{
-        private someStates currentState;
-
-        public someStates getState(){
-            return currentState;
-        }
-
-        public void setState(someStates setstate) {
-            currentState = setstate;
-        }
-    }
-
     private class movingAvg{
         private int[] moving = new int[moving_avg_amount];
 
@@ -391,6 +336,7 @@ public class StateMachineAuto extends OpMode {
         }
     }
 
+    /*
     private class colorSens{
         private movingAvg ret;
         private boolean redOrBlue;
@@ -399,7 +345,7 @@ public class StateMachineAuto extends OpMode {
             ret = new movingAvg();
             redOrBlue = red;
             ret.reset();
-            if(colorWorks) color.enableLed(true);
+            color.
         }
         boolean checkColor() {
             if (colorWorks) {
@@ -416,6 +362,7 @@ public class StateMachineAuto extends OpMode {
             ret.reset();
         }
     }
+*/
 
     // perform I2C read/write action
     //private void performAction(String actionName, int port, int i2cAddress, int memAddress, int memLength) {

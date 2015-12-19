@@ -1,24 +1,21 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
+        import android.media.MediaPlayer;
 
-import android.content.Context;
-import android.media.MediaPlayer;
-
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
+        import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+        import com.qualcomm.robotcore.hardware.DcMotor;
+        import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * Created by Robotics on 10/28/2015.
  */
 
-public class CENA extends OpMode {
+public class Teleop extends OpMode {
     DcMotor frontLeftMotor; //motor declarations, actual motor names will be later on
     DcMotor frontRightMotor;
-    DcMotor backLeftMotor;
-    DcMotor backRightMotor;
-    DcMotor bucketMotor;
-    DcMotor tapeMotor;
-    DcMotor hookMotor;
-    DcMotor sweepMotor;
+    DcMotor tapeMotor1;
+    DcMotor tapeMotor2;
+    Servo leftClaw;
+    Servo rightClaw;
 
     MediaPlayer mp=new MediaPlayer();
 
@@ -27,8 +24,10 @@ public class CENA extends OpMode {
     private static final String backLeft = "back_left";
     private static final String backRight = "back_right";
     private static final String bucketName = "bucket";
-    private static final String tapeName = "tape";
-    private static final String hookName = "hook";
+    private static final String tape1Name = "tape1";
+    private static final String tape2Name = "tape2";
+    private static final String leftClawName = "left_claw";
+    private static final String rightClawName = "right_claw";
     private static final String sweepName = "sweep";
 
     private static final double frontMotorMultiple = 1.0;
@@ -44,8 +43,13 @@ public class CENA extends OpMode {
     private static final double sweepPowerUp = 1.0;
     private static final double sweepPowerDown = -1.0;
 
+    private static final double left_servo_idle = 0.5;
+    private static final double right_servo_idle = 0.5;
+    private static final double left_servo_lower = 1.0;
+    private static final double right_servo_lower = 1.0;
+
     //constructor
-    public CENA() {
+    public Teleop() {
         try{
             mp.setDataSource("/storage/emulated/0/JOHNCENA.mp3");//Write your location here
             mp.prepare();
@@ -59,19 +63,15 @@ public class CENA extends OpMode {
 
         frontLeftMotor = hardwareMap.dcMotor.get(frontLeft);
         frontRightMotor = hardwareMap.dcMotor.get(frontRight);
-        backRightMotor = hardwareMap.dcMotor.get(backLeft);
-        backLeftMotor = hardwareMap.dcMotor.get(backRight);
-        bucketMotor = hardwareMap.dcMotor.get(bucketName);
-        tapeMotor = hardwareMap.dcMotor.get(tapeName);
-        hookMotor = hardwareMap.dcMotor.get(hookName);
-        sweepMotor = hardwareMap.dcMotor.get(sweepName);
+        tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
+        tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
+        leftClaw = hardwareMap.servo.get(leftClawName);
+        rightClaw = hardwareMap.servo.get(rightClawName);
 
         frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
-        tapeMotor.setDirection(DcMotor.Direction.REVERSE);
-        hookMotor.setDirection(DcMotor.Direction.REVERSE);
+        tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
         //arm = hardwareMap.servo.get("servo_1");
         //claw = hardwareMap.servo.get("servo_6");
 
@@ -110,26 +110,18 @@ public class CENA extends OpMode {
         float rightThrottle = gamepad1.right_stick_y;
 
         // write the values to the motors
-        backLeftMotor.setPower(leftThrottle * backMotorMultiple);
         frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
-        backRightMotor.setPower(rightThrottle * backMotorMultiple);
         frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
         // update the position of everything else
-        if(gamepad2.left_trigger > triggerThresh) tapeMotor.setPower(gamepad2.left_trigger);
-        else if(gamepad2.right_trigger > triggerThresh) tapeMotor.setPower(-gamepad2.right_trigger);
-        else tapeMotor.setPower(0);
+        if(gamepad1.left_trigger > triggerThresh) runTape(gamepad1.left_trigger);
+        else if(gamepad1.right_trigger > triggerThresh) runTape(-gamepad1.right_trigger);
+        else runTape(0);
 
-        if(gamepad2.right_bumper) hookMotor.setPower(hookPowerDown);
-        else if(gamepad2.left_bumper) hookMotor.setPower(hookPowerUp);
-        else hookMotor.setPower(0);
+        if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);
+        else leftClaw.setPosition(left_servo_idle);
 
-        if(gamepad1.a) bucketMotor.setPower(bucketPowerUp);
-        else if (gamepad1.b) bucketMotor.setPower(bucketPowerDown);
-        else bucketMotor.setPower(0);
-
-        if(gamepad1.left_bumper)  sweepMotor.setPower(sweepPowerUp);
-        else if (gamepad1.right_bumper) sweepMotor.setPower(sweepPowerDown);
-        else sweepMotor.setPower(0);
+        if(gamepad1.right_bumper) rightClaw.setPosition(right_servo_lower);
+        else rightClaw.setPosition(right_servo_idle);
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
@@ -155,6 +147,11 @@ public class CENA extends OpMode {
      * scaled value is less than linear.  This is to make it easier to drive
      * the robot more precisely at slower speeds.
      */
+    private void runTape(double power){
+        tapeMotor1.setPower(power);
+        tapeMotor2.setPower(power);
+    }
+
     double scaleInput(double dVal)  {
         double[] scaleArray = { 0.0, 0.05, 0.09, 0.10, 0.12, 0.15, 0.18, 0.24,
                 0.30, 0.36, 0.43, 0.50, 0.60, 0.72, 0.85, 1.00, 1.00 };
