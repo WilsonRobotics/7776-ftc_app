@@ -1,5 +1,7 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
 
+import android.media.MediaPlayer;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -18,6 +20,8 @@ public class RedAuto extends OpMode {
     private static final boolean testState = false;
     private static final someStates testingState = someStates.DrivingToMountain;
     private boolean servosWork = true;
+
+    MediaPlayer mp=new MediaPlayer();
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -118,6 +122,11 @@ public class RedAuto extends OpMode {
         }
         setDrivePower(0, 0);
 
+        try{
+            mp.setDataSource("/storage/emulated/0/theme.mp3");//Write your location here
+            mp.prepare();
+        }catch(Exception e){e.printStackTrace();}
+
         //dim = hardwareMap.deviceInterfaceModule.get("dim");
 
         //readCache = dim.getI2cReadCache(gyro_port);
@@ -184,7 +193,7 @@ public class RedAuto extends OpMode {
                 utterState = someStates.PlayingSound;
                 break;
             case PlayingSound:
-                //TODO: Sound code
+                mp.start();
                 utterState = someStates.End;
                 break;
             case End:
@@ -262,6 +271,7 @@ public class RedAuto extends OpMode {
         boolean pathSet;
         private pathPart currentPath[];
         private int currentSeg = -1;
+        boolean motorsSet = false;
 
 
         public void begin(pathPart runPath[]) {
@@ -281,9 +291,17 @@ public class RedAuto extends OpMode {
                     setDrivePower(0, 0);
                     resetEncoders();
                     currentSeg++;
-                    if (currentSeg > currentPath.length) {
+                    motorsSet=false;
+                    if (currentSeg >= currentPath.length) {
                         currentSeg = -1;
                     }
+                }
+                else if(!motorsSet) {
+                    runToPosition();
+                    setEncoderTarget(currentPath[currentSeg].leftDistance, currentPath[currentSeg].rightDistance);
+                    setDrivePower(currentPath[currentSeg].leftPower, currentPath[currentSeg].rightPower);
+                    telemetry.addData("Motors Set!", currentPath[currentSeg].leftDistance);
+                    motorsSet=true;
                 }
                 return true;
             }
