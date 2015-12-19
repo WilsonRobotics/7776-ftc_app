@@ -32,11 +32,7 @@ public class StateMachineAuto extends OpMode {
 
     State utterState;
     path superPath;
-    colorSens color_sensor;
     boolean firstCall=true;
-    boolean colorWorks=true;
-
-
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";

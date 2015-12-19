@@ -1,52 +1,59 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
+        import android.media.MediaPlayer;
 
-import android.media.MediaPlayer;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
+        import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+        import com.qualcomm.robotcore.hardware.DcMotor;
+        import com.qualcomm.robotcore.hardware.Servo;
 
 /**
- * Created by Robotics  on 10/28/2015.
+ * Created by Robotics on 10/28/2015.
  */
 
 public class Teleop extends OpMode {
-
-    DcMotor frontLeftMotor;
+    DcMotor frontLeftMotor; //motor declarations, actual motor names will be later on
     DcMotor frontRightMotor;
     DcMotor tapeMotor1;
     DcMotor tapeMotor2;
-    Servo bucket;
-    Servo armRelease;
-    //Servo arm;
+    Servo leftClaw;
+    Servo rightClaw;
 
-    MediaPlayer mp = new MediaPlayer();
+    MediaPlayer mp=new MediaPlayer();
 
-    private static final String frontLeft =  "front_left";
+    private static final String frontLeft =  "front_left";  //motor name defines
     private static final String frontRight = "front_right";
-    private static final String tape1Name = "tape_right";
-    private static final String tape2Name = "tape_left";
+    private static final String backLeft = "back_left";
+    private static final String backRight = "back_right";
     private static final String bucketName = "bucket";
-    private static final String releaseName = "dropit";
+    private static final String tape1Name = "tape1";
+    private static final String tape2Name = "tape2";
+    private static final String leftClawName = "left_claw";
+    private static final String rightClawName = "right_claw";
+    private static final String sweepName = "sweep";
 
     private static final double frontMotorMultiple = 1.0;
+    private static final double backMotorMultiple = 1.0;
     private static final double triggerThresh = 0.05;
 
-    private static final double bucketPowerUp = 0;
-    private static final double bucketPowerDown = 0.80;
+    private static final double hookPowerUp = 1;
+    private static final double hookPowerDown = -1;
 
-    private static final double releasePowerUp = 0.2;
-    private static final double releasePowerDown = 0;
+    private static final double bucketPowerUp = 0.3;
+    private static final double bucketPowerDown = -0.3;
 
-    //private static final double armUpPosition = 0.0;
-    //private static final double armLeftPosition = -1.0;
-    //private static final double armRightPosition = 1.0;
+    private static final double sweepPowerUp = 1.0;
+    private static final double sweepPowerDown = -1.0;
+
+    private static final double left_servo_idle = 0.5;
+    private static final double right_servo_idle = 0.5;
+    private static final double left_servo_lower = 1.0;
+    private static final double right_servo_lower = 1.0;
 
     //constructor
     public Teleop() {
         try{
             mp.setDataSource("/storage/emulated/0/JOHNCENA.mp3");//Write your location here
             mp.prepare();
-        }catch(Exception e){ e.printStackTrace(); }
+        }catch(Exception e){e.printStackTrace();}
 
     }
 
@@ -58,13 +65,19 @@ public class Teleop extends OpMode {
         frontRightMotor = hardwareMap.dcMotor.get(frontRight);
         tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
         tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
-        bucket = hardwareMap.servo.get(bucketName);
-        armRelease = hardwareMap.servo.get(releaseName);
+        leftClaw = hardwareMap.servo.get(leftClawName);
+        rightClaw = hardwareMap.servo.get(rightClawName);
 
-        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
-        bucket.setPosition(bucketPowerDown);
-        //arm.setPosition(armUpPosition);
+        //arm = hardwareMap.servo.get("servo_1");
+        //claw = hardwareMap.servo.get("servo_6");
+
+        // set the gamepad 2 dead zone to 0
+        gamepad2.setJoystickDeadzone(0.0f);
+
     }
 
     @Override
@@ -75,29 +88,40 @@ public class Teleop extends OpMode {
     @Override
     public void loop() {
 
+		/*
+		Gamepad 1 controls the motors via the left stick, and it controls the
+		wrist/claw via the a,b, x, y buttons
+
+        throttle: left_stick_y ranges from -1 to 1, where -1 is full up, and
+        1 is full down
+        direction: left_stick_x ranges from -1 to 1, where -1 is full left
+        and 1 is full right
+        */
+
+        /*
+        TANK STEERING MOTHERFUCKAH
+        float throttle = -gamepad1.left_stick_y;
+        float direction = gamepad1.left_stick_x;
+        float right = throttle - direction;
+        float left = throttle + direction;
+        */
+
         float leftThrottle = gamepad1.left_stick_y;
         float rightThrottle = gamepad1.right_stick_y;
 
         // write the values to the motors
         frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
         frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
-
         // update the position of everything else
-
-        if(gamepad1.right_trigger > triggerThresh) runTape(gamepad1.right_trigger);
-        else if(gamepad1.left_trigger > triggerThresh) runTape(-gamepad1.left_trigger);
+        if(gamepad1.left_trigger > triggerThresh) runTape(gamepad1.left_trigger);
+        else if(gamepad1.right_trigger > triggerThresh) runTape(-gamepad1.right_trigger);
         else runTape(0);
 
-        if(gamepad1.x) armRelease.setPosition(releasePowerUp);
-        else armRelease.setPosition(releasePowerDown);
+        if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);
+        else leftClaw.setPosition(left_servo_idle);
 
-        if(gamepad1.a) bucket.setPosition(bucketPowerUp);
-        else bucket.setPosition(bucketPowerDown);
-
-        //if(gamepad1.dpad_up) arm.setPosition(armUpPosition);
-        //else if(gamepad1.dpad_left) arm.setPosition(armLeftPosition);
-        //else if(gamepad1.dpad_right) arm.setPosition(armRightPosition);
-
+        if(gamepad1.right_bumper) rightClaw.setPosition(right_servo_lower);
+        else rightClaw.setPosition(right_servo_idle);
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
@@ -105,6 +129,8 @@ public class Teleop extends OpMode {
 		 * are currently write only.
 		 */
         telemetry.addData("Text", "*** F***YEAH!!!***");
+        //telemetry.addData("arm", "arm:  " + String.format("%.2f", armPosition));
+        //telemetry.addData("claw", "claw:  " + String.format("%.2f", clawPosition));
         telemetry.addData("left tgt pwr", "left  pwr: " + String.format("%.2f", leftThrottle));
         telemetry.addData("right tgt pwr", "right pwr: " + String.format("%.2f", rightThrottle));
     }
@@ -115,16 +141,17 @@ public class Teleop extends OpMode {
         mp.stop();
     }
 
-    private void runTape(double power){
-        tapeMotor2.setPower(power);
-        tapeMotor1.setPower(power);
-    }
 
     /*
      * This method scales the joystick input so for low joystick values, the
      * scaled value is less than linear.  This is to make it easier to drive
      * the robot more precisely at slower speeds.
      */
+    private void runTape(double power){
+        tapeMotor1.setPower(power);
+        tapeMotor2.setPower(power);
+    }
+
     double scaleInput(double dVal)  {
         double[] scaleArray = { 0.0, 0.05, 0.09, 0.10, 0.12, 0.15, 0.18, 0.24,
                 0.30, 0.36, 0.43, 0.50, 0.60, 0.72, 0.85, 1.00, 1.00 };
