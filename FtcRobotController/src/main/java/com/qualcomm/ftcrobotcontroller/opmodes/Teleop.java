@@ -18,6 +18,7 @@ public class Teleop extends OpMode {
     Servo rightClaw;
 
     MediaPlayer mp=new MediaPlayer();
+    boolean servosWork = true;
 
     private static final String frontLeft =  "front_left";  //motor name defines
     private static final String frontRight = "front_right";
@@ -65,13 +66,22 @@ public class Teleop extends OpMode {
         frontRightMotor = hardwareMap.dcMotor.get(frontRight);
         tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
         tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
-        leftClaw = hardwareMap.servo.get(leftClawName);
-        rightClaw = hardwareMap.servo.get(rightClawName);
+        try{
+            leftClaw = hardwareMap.servo.get(leftClawName);
+            rightClaw = hardwareMap.servo.get(rightClawName);
+        }
+        catch (Exception ex){
+            telemetry.addData("Servos Disconnected", 0);
+            servosWork=false;
 
-        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        }
+
+
+        //frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
-        //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
+        tapeMotor2.setDirection(DcMotor.Direction.FORWARD);
         //arm = hardwareMap.servo.get("servo_1");
         //claw = hardwareMap.servo.get("servo_6");
 
@@ -117,11 +127,14 @@ public class Teleop extends OpMode {
         else if(gamepad1.right_trigger > triggerThresh) runTape(-gamepad1.right_trigger);
         else runTape(0);
 
-        if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);
-        else leftClaw.setPosition(left_servo_idle);
+        if(servosWork){
+            if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);
+            else leftClaw.setPosition(left_servo_idle);
 
-        if(gamepad1.right_bumper) rightClaw.setPosition(right_servo_lower);
-        else rightClaw.setPosition(right_servo_idle);
+            if(gamepad1.right_bumper) rightClaw.setPosition(right_servo_lower);
+            else rightClaw.setPosition(right_servo_idle);
+        }
+
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
