@@ -6,7 +6,7 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
         import com.qualcomm.robotcore.hardware.Servo;
 
 /**
- * Created by Robotics on 10/28/2015.
+ * Created by Robotics  on 10/28/2015.
  */
 
 public class Teleop extends OpMode {
@@ -14,8 +14,9 @@ public class Teleop extends OpMode {
     DcMotor frontRightMotor;
     DcMotor tapeMotor1;
     DcMotor tapeMotor2;
-    Servo leftClaw;
-    Servo rightClaw;
+    Servo bucket;
+    //Servo leftClaw;
+    //Servo rightClaw;
 
     MediaPlayer mp=new MediaPlayer();
     boolean servosWork = true;
@@ -24,11 +25,11 @@ public class Teleop extends OpMode {
     private static final String frontRight = "front_right";
     private static final String backLeft = "back_left";
     private static final String backRight = "back_right";
-    private static final String bucketName = "bucket";
-    private static final String tape1Name = "tape1";
+    private static final String tape1Name = "tape";
     private static final String tape2Name = "tape2";
     private static final String leftClawName = "left_claw";
     private static final String rightClawName = "right_claw";
+    private static final String bucketName = "bucket";
     private static final String sweepName = "sweep";
 
     private static final double frontMotorMultiple = 1.0;
@@ -38,8 +39,8 @@ public class Teleop extends OpMode {
     private static final double hookPowerUp = 1;
     private static final double hookPowerDown = -1;
 
-    private static final double bucketPowerUp = 0.3;
-    private static final double bucketPowerDown = -0.3;
+    private static final double bucketPowerUp = 0;
+    private static final double bucketPowerDown = 0.75;
 
     private static final double sweepPowerUp = 1.0;
     private static final double sweepPowerDown = -1.0;
@@ -65,20 +66,21 @@ public class Teleop extends OpMode {
         frontLeftMotor = hardwareMap.dcMotor.get(frontLeft);
         frontRightMotor = hardwareMap.dcMotor.get(frontRight);
         tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
-        tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
-        try{
-            leftClaw = hardwareMap.servo.get(leftClawName);
-            rightClaw = hardwareMap.servo.get(rightClawName);
-        }
-        catch (Exception ex){
-            telemetry.addData("Servos Disconnected", 0);
-            servosWork=false;
-
-        }
+        bucket = hardwareMap.servo.get(bucketName);
+        //try{
+        //    leftClaw = hardwareMap.servo.get(leftClawName);
+        //    rightClaw = hardwareMap.servo.get(rightClawName);
+        //}
+        //catch (Exception ex){
+        //    telemetry.addData("Servos Disconnected", 0);
+        //    servosWork=false;
+        //
+        //}
 
 
         //frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        bucket.setPosition(bucketPowerDown);
         frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor2.setDirection(DcMotor.Direction.FORWARD);
@@ -123,17 +125,20 @@ public class Teleop extends OpMode {
         frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
         frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
         // update the position of everything else
-        if(gamepad1.left_trigger > triggerThresh) runTape(gamepad1.left_trigger);
-        else if(gamepad1.right_trigger > triggerThresh) runTape(-gamepad1.right_trigger);
+        if(gamepad1.right_trigger > triggerThresh) runTape(gamepad1.right_trigger);
+        else if(gamepad1.left_trigger > triggerThresh) runTape(-gamepad1.left_trigger);
         else runTape(0);
 
-        if(servosWork){
-            if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);
-            else leftClaw.setPosition(left_servo_idle);
+        if(gamepad1.a) bucket.setPosition(bucketPowerUp);
+        else bucket.setPosition(bucketPowerDown);
 
-            if(gamepad1.right_bumper) rightClaw.setPosition(right_servo_lower);
-            else rightClaw.setPosition(right_servo_idle);
-        }
+        //if(servosWork){
+        //    if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);
+        //    else leftClaw.setPosition(left_servo_idle);
+        //
+        // if(gamepad1.right_bumper) rightClaw.setPosition(right_servo_lower);
+        //    else rightClaw.setPosition(right_servo_idle);
+        //          }
 
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
