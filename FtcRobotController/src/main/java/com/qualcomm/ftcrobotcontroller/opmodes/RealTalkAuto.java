@@ -14,18 +14,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 public class RealTalkAuto extends OpMode {
 
-    AutoLib.Sequence mSequence;     // the root of the sequence tree
     AutoLib.Sequence mainSequence;
     boolean bDone;                  // true when the programmed sequence is done
 
-    //motors
-    AutoLib.RealHardwareFactory hardware;
-    AutoLib.TestHardwareFactory fakeHardware;
     DcMotor front_left;
     DcMotor front_right;
     DcMotor tape_motor;
-    DcMotor fake_back_left;
-    DcMotor fake_back_right;
     Servo bucket;
 
     private static final String front_left_name = "front_left";
@@ -47,32 +41,43 @@ public class RealTalkAuto extends OpMode {
     private static final double right_servo_idle = 0.5;
     private static final double left_servo_lower = 1.0;
     private static final double right_servo_lower = 1.0;
+    private static final double bucketPowerUp = 0;
+    private static final double bucketPowerDown = 1;
 
     public RealTalkAuto() {
     }
 
     public void init() {
+        front_left = hardwareMap.dcMotor.get(front_left_name);
+        front_right = hardwareMap.dcMotor.get(front_right_name);
+        bucket = hardwareMap.servo.get(bucket_name);
+        tape_motor = hardwareMap.dcMotor.get(tape_motor_name);
 
-        front_left = hardware.getDcMotor(front_left_name);
-        front_right = hardware.getDcMotor(front_right_name);
-        bucket = hardware.getServo(bucket_name);
-        tape_motor = hardware.getDcMotor(tape_motor_name);
-
-        fake_back_left = fakeHardware.getDcMotor(back_left_name);
-        fake_back_right = fakeHardware.getDcMotor(back_right_name);
+        front_right.setDirection(DcMotor.Direction.REVERSE);
 
         mainSequence = new AutoLib.LinearSequence();
 
-        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+        bucket.setPosition(bucketPowerDown);
+
+        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, fake_back_right, front_left, fake_back_left,
-                forward_power, 1000, true));
-        drivingToBox.add(new AutoLib.TurnByEncoder(front_right, fake_back_right, front_left, fake_back_left,
-                -forward_power, forward_power, -360, 360, true));
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, fake_back_right, front_left, fake_back_left,
-                forward_power, 1800, false));
+        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                forward_power, 4500, true));
+        drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                -forward_power, forward_power, 1500, 1500, true));
+        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                forward_power, 9500, true));
+        drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                -forward_power, forward_power, 1400, 1400, true));
+        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                forward_power/2, 3000, true));
         mainSequence.add(drivingToBox);
+
+        AutoLib.LinearSequence dumpingClimber = new AutoLib.LinearSequence();
+        dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerUp, 2, false));
+        dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1, false));
+        mainSequence.add(dumpingClimber);
 
         mainSequence.add(new AutoLib.LogTimeStep(this, "All Done!", 5));
         // start out not-done

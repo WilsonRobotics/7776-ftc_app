@@ -265,6 +265,41 @@ public class AutoLib {
 
     }
 
+    //a class to run a servo to a place for a set time
+    static public class TimedServoStep extends Step {
+        Timer mTimer;
+        Servo mServo;
+        double mPosition;
+        boolean mReturn;          // stop motor when count is reached
+        double lastPosition;
+
+        public TimedServoStep(Servo servo, double position, double seconds, boolean goBack) {
+            mServo = servo;
+            mPosition = position;
+            mTimer = new Timer(seconds);
+            mReturn = goBack;
+            lastPosition = mServo.getPosition();
+        }
+
+        public boolean loop() {
+            super.loop();
+
+            // start the Timer and start the motor on our first call
+            if (firstLoopCall()) {
+                mTimer.start();
+                mServo.setPosition(mPosition);
+            }
+
+            // run the motor at the requested power until the Timer runs out
+            boolean done = mTimer.done();
+            if (done && mReturn)
+               mServo.setPosition(lastPosition);
+
+            return done;
+        }
+
+    }
+
 
     // some convenience utility classes for common operations
 
@@ -272,10 +307,14 @@ public class AutoLib {
     static public class MoveByTime extends ConcurrentSequence {
 
         public MoveByTime(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double power, double seconds, boolean stop) {
-            this.add(new TimedMotorStep(fr, power, seconds, stop));
-            this.add(new TimedMotorStep(br, power, seconds, stop));
-            this.add(new TimedMotorStep(fl, power, seconds, stop));
-            this.add(new TimedMotorStep(bl, power, seconds, stop));
+            if(fr != null)
+                this.add(new TimedMotorStep(fr, power, seconds, stop));
+            if(br != null)
+                this.add(new TimedMotorStep(br, power, seconds, stop));
+            if(fl != null)
+                this.add(new TimedMotorStep(fl, power, seconds, stop));
+            if(bl != null)
+                this.add(new TimedMotorStep(bl, power, seconds, stop));
         }
 
     }
@@ -285,10 +324,14 @@ public class AutoLib {
     static public class TurnByTime extends ConcurrentSequence {
 
         public TurnByTime(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rightPower, double leftPower, double seconds, boolean stop) {
-            this.add(new TimedMotorStep(fr, rightPower, seconds, stop));
-            this.add(new TimedMotorStep(br, rightPower, seconds, stop));
-            this.add(new TimedMotorStep(fl, leftPower, seconds, stop));
-            this.add(new TimedMotorStep(bl, leftPower, seconds, stop));
+            if(fr != null)
+                this.add(new TimedMotorStep(fr, rightPower, seconds, stop));
+            if(br != null)
+                this.add(new TimedMotorStep(br, rightPower, seconds, stop));
+            if(fl != null)
+                this.add(new TimedMotorStep(fl, leftPower, seconds, stop));
+            if(fr != null)
+                this.add(new TimedMotorStep(bl, leftPower, seconds, stop));
         }
 
     }
@@ -298,10 +341,14 @@ public class AutoLib {
     static public class MoveByEncoder extends ConcurrentSequence {
 
         public MoveByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double power, double count, boolean stop) {
-            this.add(new EncoderMotorStep(new EncoderMotor(fr), power, count, stop));
-            this.add(new EncoderMotorStep(new EncoderMotor(br), power, count, stop));
-            this.add(new EncoderMotorStep(new EncoderMotor(fl), power, count, stop));
-            this.add(new EncoderMotorStep(new EncoderMotor(bl), power, count, stop));
+            if(fr != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(fr), power, count, stop));
+            if(br != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(br), power, count, stop));
+            if(fl != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(fl), power, count, stop));
+            if(bl != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(bl), power, count, stop));
         }
 
     }
@@ -311,10 +358,14 @@ public class AutoLib {
     static public class TurnByEncoder extends ConcurrentSequence {
 
         public TurnByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rightPower, double leftPower, double rightCount, double leftCount, boolean stop) {
-            this.add(new EncoderMotorStep(new EncoderMotor(fr), rightPower, rightCount, stop));
-            this.add(new EncoderMotorStep(new EncoderMotor(br), rightPower, rightCount, stop));
-            this.add(new EncoderMotorStep(new EncoderMotor(fl), leftPower, leftCount, stop));
-            this.add(new EncoderMotorStep(new EncoderMotor(bl), leftPower, leftCount, stop));
+            if(fr != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(fr), rightPower, rightCount, stop));
+            if(br != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(br), rightPower, rightCount, stop));
+            if(fl != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(fl), leftPower, leftCount, stop));
+            if(bl != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(bl), leftPower, leftCount, stop));
         }
 
     }
