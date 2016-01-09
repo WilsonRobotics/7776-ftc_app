@@ -13,7 +13,6 @@ public class Teleop extends OpMode {
     DcMotor frontLeftMotor; //motor declarations, actual motor names will be later on
     DcMotor frontRightMotor;
     DcMotor tapeMotor1;
-    DcMotor tapeMotor2;
     Servo bucket;
     //Servo leftClaw;
     //Servo rightClaw;
@@ -83,7 +82,6 @@ public class Teleop extends OpMode {
         bucket.setPosition(bucketPowerDown);
         frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
-        tapeMotor2.setDirection(DcMotor.Direction.FORWARD);
         //arm = hardwareMap.servo.get("servo_1");
         //claw = hardwareMap.servo.get("servo_6");
 
@@ -167,7 +165,6 @@ public class Teleop extends OpMode {
      */
     private void runTape(double power){
         tapeMotor1.setPower(power);
-        tapeMotor2.setPower(power);
     }
 
     double scaleInput(double dVal)  {
