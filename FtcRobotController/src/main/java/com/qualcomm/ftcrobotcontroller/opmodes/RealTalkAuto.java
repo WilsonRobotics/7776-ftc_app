@@ -79,6 +79,26 @@ public class RealTalkAuto extends OpMode {
         dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1, false));
         mainSequence.add(dumpingClimber);
 
+        AutoLib.LinearSequence drivingToMountain = new AutoLib.LinearSequence();
+        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                -forward_power, 1500, true));
+        drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                        forward_power, -forward_power, 2000, 2000, true));
+        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                forward_power, 2500, true));
+        drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                forward_power, -forward_power, 1500, 1500, true));
+        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                forward_power, 2000, true));
+        mainSequence.add(drivingToMountain);
+
+        AutoLib.LinearSequence drivingUpMountain = new AutoLib.LinearSequence();
+        drivingUpMountain.add(new AutoLib.MoveByTime(front_right, null, front_left, null,
+                forward_power, 5, true));
+        drivingToMountain.add(new AutoLib.MoveByTime(front_right, null, front_left, null,
+                0.2, 0, false));
+        mainSequence.add(drivingUpMountain);
+
         mainSequence.add(new AutoLib.LogTimeStep(this, "All Done!", 5));
         // start out not-done
         bDone = false;
@@ -92,6 +112,8 @@ public class RealTalkAuto extends OpMode {
     }
 
     public void stop() {
+        front_left.setPower(0);
+        front_right.setPower(0);
         telemetry.addData("stop() called", "");
     }
 }
