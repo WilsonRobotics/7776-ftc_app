@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  */
 
 
-public class RealTalkAuto extends OpMode {
+public class RealTalkAutoBlue extends OpMode {
 
     AutoLib.Sequence mainSequence;
     boolean bDone;                  // true when the programmed sequence is done
@@ -22,7 +22,7 @@ public class RealTalkAuto extends OpMode {
     DcMotor tape_motor;
     Servo bucket;
 
-    boolean blue = false;
+    private static final boolean blue = true;
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -46,7 +46,7 @@ public class RealTalkAuto extends OpMode {
     private static final double bucketPowerUp = 0;
     private static final double bucketPowerDown = 1;
 
-    public RealTalkAuto() {
+    public RealTalkAutoBlue() {
     }
 
     public void init() {
@@ -75,7 +75,7 @@ public class RealTalkAuto extends OpMode {
         if(!blue) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 1200, 1200, true));
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 1200, 1200, true));
+                forward_power, -forward_power, 1200, 1200, true));
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
                 forward_power/2, 3000, true));
         mainSequence.add(drivingToBox);
