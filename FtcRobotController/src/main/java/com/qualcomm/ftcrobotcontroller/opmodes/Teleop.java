@@ -19,6 +19,7 @@ public class Teleop extends OpMode {
 
     MediaPlayer mp=new MediaPlayer();
     boolean servosWork = true;
+    boolean passive = false;
 
     private static final String frontLeft =  "front_left";  //motor name defines
     private static final String frontRight = "front_right";
@@ -81,6 +82,7 @@ public class Teleop extends OpMode {
         //backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         bucket.setPosition(bucketPowerDown);
         frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        //frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
         //arm = hardwareMap.servo.get("servo_1");
         //claw = hardwareMap.servo.get("servo_6");
@@ -123,12 +125,19 @@ public class Teleop extends OpMode {
         frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
         frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
         // update the position of everything else
-        if(gamepad1.right_trigger > triggerThresh) runTape(gamepad1.right_trigger);
+
+        if(gamepad1.x) passive=true;
+        else if(gamepad1.y) passive=false;
+
+        if (gamepad1.right_trigger > triggerThresh) runTape(gamepad1.right_trigger);
         else if(gamepad1.left_trigger > triggerThresh) runTape(-gamepad1.left_trigger);
+        else if(passive) runTape(0.2);
         else runTape(0);
 
         if(gamepad1.a) bucket.setPosition(bucketPowerUp);
         else bucket.setPosition(bucketPowerDown);
+
+
 
         //if(servosWork){
         //    if(gamepad1.left_bumper) leftClaw.setPosition(left_servo_lower);

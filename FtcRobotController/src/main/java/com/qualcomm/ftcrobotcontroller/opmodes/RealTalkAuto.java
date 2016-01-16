@@ -28,6 +28,8 @@ public class RealTalkAuto extends OpMode {
 
     boolean red = true;
 
+    boolean blue = false;
+
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
     private static final String back_left_name = "back_left";
