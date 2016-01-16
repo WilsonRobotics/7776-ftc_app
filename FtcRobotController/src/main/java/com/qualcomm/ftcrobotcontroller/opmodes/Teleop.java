@@ -1,9 +1,10 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
-        import android.media.MediaPlayer;
 
-        import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-        import com.qualcomm.robotcore.hardware.DcMotor;
-        import com.qualcomm.robotcore.hardware.Servo;
+import android.media.MediaPlayer;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 /**
  * Created by Robotics  on 10/28/2015.
@@ -14,26 +15,27 @@ public class Teleop extends OpMode {
     DcMotor frontRightMotor;
     DcMotor tapeMotor1;
     Servo bucket;
+    //Servo leftArm;
     //Servo leftClaw;
     //Servo rightClaw;
 
     MediaPlayer mp=new MediaPlayer();
-    boolean servosWork = true;
+    //boolean servosWork = true;
     boolean passive = false;
 
     private static final String frontLeft =  "front_left";  //motor name defines
     private static final String frontRight = "front_right";
-    private static final String backLeft = "back_left";
-    private static final String backRight = "back_right";
+    //private static final String backLeft = "back_left";
+    //private static final String backRight = "back_right";
     private static final String tape1Name = "tape";
-    private static final String tape2Name = "tape2";
-    private static final String leftClawName = "left_claw";
-    private static final String rightClawName = "right_claw";
+    //private static final String tape2Name = "tape2";
+    //private static final String leftClawName = "left_claw";
+    //private static final String rightClawName = "right_claw";
     private static final String bucketName = "bucket";
-    private static final String sweepName = "sweep";
+    //private static final String sweepName = "sweep";
 
     private static final double frontMotorMultiple = 1.0;
-    private static final double backMotorMultiple = 1.0;
+    //private static final double backMotorMultiple = 1.0;
     private static final double triggerThresh = 0.05;
 
     private static final double hookPowerUp = 1;
