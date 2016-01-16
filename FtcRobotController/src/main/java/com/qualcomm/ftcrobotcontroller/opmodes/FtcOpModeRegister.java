@@ -58,8 +58,8 @@ public class FtcOpModeRegister implements OpModeRegister {
     manager.register("NullOp", NullOp.class);
 
     manager.register("USE THIS TELEOP", Teleop.class);
-    manager.register("Blue Auto", RealTalkAuto.class);
-    manager.register("Red Auto", RealTalkAutoBlue.class);
+    manager.register("Red Auto", RealTalkAuto.class);
+    manager.register("Blue Auto", RealTalkAutoBlue.class);
 
 
 
@@ -67,7 +67,7 @@ public class FtcOpModeRegister implements OpModeRegister {
     /*
      * Uncomment any of the following lines if you want to register an op mode.
      */
-    manager.register("MR Gyro Test", MRGyroTest.class);
+    //manager.register("MR Gyro Test", MRGyroTest.class);
 
     //manager.register("AdafruitRGBExample", AdafruitRGBExample.class);
     //manager.register("ColorSensorDriver", ColorSensorDriver.class);

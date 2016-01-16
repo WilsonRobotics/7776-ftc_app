@@ -22,7 +22,7 @@ public class RealTalkAutoBlue extends OpMode {
     DcMotor tape_motor;
     Servo bucket;
 
-    private static final boolean blue = true;
+    private static final boolean red = false;
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -66,13 +66,13 @@ public class RealTalkAutoBlue extends OpMode {
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
                 forward_power, 4500, true));
-        if(!blue) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+        if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 1300, 1300, true));
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 forward_power, -forward_power, 1300, 1300, true));
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
                 forward_power, 10000, true));
-        if(!blue) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+        if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 1200, 1200, true));
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 forward_power, -forward_power, 1200, 1200, true));
@@ -88,13 +88,13 @@ public class RealTalkAutoBlue extends OpMode {
         AutoLib.LinearSequence drivingToMountain = new AutoLib.LinearSequence();
         drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
                 -forward_power, 1500, true));
-        if(!blue) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+        if(!red) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 4500, 4500, true));
         else drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 forward_power, -forward_power, 4500, 4500, true));
         drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
                 forward_power, 5000, true));
-        if(!blue) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+        if(!red) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 forward_power, -forward_power, 3200, 3200, true));
         else drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 3200, 3200, true));
