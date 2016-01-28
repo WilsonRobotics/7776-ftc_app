@@ -3,7 +3,10 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
+import android.media.MediaPlayer;
+import android.view.textservice.TextInfo;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -176,6 +179,36 @@ public class AutoLib {
             return (mTimer.done());
         }
 
+    }
+
+    //a Step which plays a song!
+    static public class TimedSongStep extends Step {
+        MediaPlayer mp;
+        Timer mTimer;
+        boolean mUsingTimer = true;
+
+        public TimedSongStep(String fileName, int time) {
+            mp = new MediaPlayer();
+            if(time > 0) mTimer = new Timer(time);
+            else mUsingTimer = false;
+            try {
+                mp.setDataSource(fileName);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public boolean loop(){
+            super.loop();
+
+            if(firstLoopCall()){
+                mp.start();
+                if(mUsingTimer) mTimer.start();
+            }
+
+            if(mUsingTimer) return mTimer.done();
+            else return true;
+        }
     }
 
 

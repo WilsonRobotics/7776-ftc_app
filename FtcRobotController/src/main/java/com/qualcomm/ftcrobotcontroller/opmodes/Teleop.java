@@ -14,6 +14,7 @@ public class Teleop extends OpMode {
     DcMotor frontLeftMotor;
     DcMotor frontRightMotor;
     DcMotor tapeMotor1;
+    DcMotor tapeMotor2;
     Servo bucket;
     //Servo arm;
 
@@ -22,7 +23,8 @@ public class Teleop extends OpMode {
 
     private static final String frontLeft =  "front_left";
     private static final String frontRight = "front_right";
-    private static final String tape1Name = "tape";
+    private static final String tape1Name = "tape_right";
+    private static final String tape2Name = "tape_left";
     private static final String bucketName = "bucket";
     //private static final String armName = "arm";
 
@@ -52,6 +54,7 @@ public class Teleop extends OpMode {
         frontLeftMotor = hardwareMap.dcMotor.get(frontLeft);
         frontRightMotor = hardwareMap.dcMotor.get(frontRight);
         tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
+        tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
         bucket = hardwareMap.servo.get(bucketName);
         //arm = hardwareMap.servo.get(armName);
 
@@ -110,6 +113,7 @@ public class Teleop extends OpMode {
     }
 
     private void runTape(double power){
+        tapeMotor2.setPower(power);
         tapeMotor1.setPower(power);
     }
 

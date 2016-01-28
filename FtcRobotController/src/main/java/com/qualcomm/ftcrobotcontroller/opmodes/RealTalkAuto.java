@@ -81,35 +81,14 @@ public class RealTalkAuto extends OpMode {
         mainSequence.add(drivingToBox);
 
         AutoLib.LinearSequence dumpingClimber = new AutoLib.LinearSequence();
-        dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerUp, 4, false));
+        dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerUp, 2, false));
+        dumpingClimber.add(new AutoLib.TimedSongStep("/storage/emulated/0/BUCKETS.wav", 2));
         dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1, false));
         mainSequence.add(dumpingClimber);
 
-        AutoLib.LinearSequence drivingToMountain = new AutoLib.LinearSequence();
-        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                -forward_power, 1500, true));
-        if(!red) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 4500, 4500, true));
-        else drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                forward_power, -forward_power, 4500, 4500, true));
-        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power, 5000, true));
-        if(!red) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                forward_power, -forward_power, 3200, 3200, true));
-        else drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 3200, 3200, true));
-        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power, 2000, false));
-        mainSequence.add(drivingToMountain);
+        AutoLib.LinearSequence playingAwesome = new AutoLib.LinearSequence();
+        playingAwesome.add(new AutoLib.TimedSongStep("/storage/emulated/0/JOHNCENA.mp3", 10000));
 
-        AutoLib.LinearSequence drivingUpMountain = new AutoLib.LinearSequence();
-        drivingUpMountain.add(new AutoLib.MoveByTime(front_right, null, front_left, null,
-                forward_power, 3, true));
-        drivingToMountain.add(new AutoLib.MoveByTime(front_right, null, front_left, null,
-                0.2, 0, false));
-        mainSequence.add(drivingUpMountain);
-
-        mainSequence.add(new AutoLib.LogTimeStep(this, "All Done!", 5));
         // start out not-done
         bDone = false;
 
