@@ -1,6 +1,7 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
 
 
+import com.qualcomm.hardware.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.TypeConversion;
@@ -29,62 +30,53 @@ public class GyroAuto extends OpMode {
     private static final int PWR_MODE = 0x3E;
     private static final int SYS_TRIGGER = 0x3F;
 
-    int port = 5;
-
     byte[] readCache;
     Lock readLock;
     byte[] writeCache;
     Lock writeLock;
 
-    DeviceInterfaceModule dim;
+    I2cDevice gyro;
+    ModernRoboticsI2cGyro x;
 
-    Timer timer;
-
-    boolean itWorked = false;
-    boolean reachedEndOfInit = false;
+    int state = 0;
 
     public void init() {
 
-        dim = hardwareMap.deviceInterfaceModule.get("dim");
+        gyro = hardwareMap.i2cDevice.get("gyro");
 
-        readCache = dim.getI2cReadCache(port);
-        readLock = dim.getI2cReadCacheLock(port);
-        writeCache = dim.getI2cWriteCache(port);
-        writeLock = dim.getI2cWriteCacheLock(port);
+        readCache = gyro.getI2cReadCache();
+        readLock = gyro.getI2cReadCacheLock();
+        writeCache = gyro.getI2cWriteCache();
+        writeLock = gyro.getI2cWriteCacheLock();
 
         // wait for device to boot
-        timer = new Timer(0.650);
-        timer.start();
-        while(!timer.done());
+        delay(0.650);
 
-        // make sure the port is ready
-        while(!dim.isI2cPortReady(port)) {
-            timer = new Timer(1);
-            timer.start();
-            while(!timer.done());
-        }
-
-        // read the the chip id from the BNO055
-        performAction("read", port, BNO055_ADDR, BNO055_ID_ADDR, 1);
-
-        readLock.lock();
-        if(TypeConversion.unsignedByteToInt(readCache[0]) == BNO055_ADDR)
-        {
-            itWorked = true;
-        }
-        readLock.unlock();
-
-        reachedEndOfInit = true;
     }
 
     public void loop() {
 
-        if(itWorked){
-            telemetry.addData("YAY", "");
-        }
+        delay(2);
 
-        if(reachedEndOfInit){
-            telemetry.addData("Reached end of init()", "");
+        switch(state)
+        {
+            case 0:
+                gyro.enableI2cReadMode(BNO055_ADDR, BNO055_ID_ADDR, 1);
+                telemetry.addData("Enabled I2C read mode", "");
+                state++;
+                break;
+            case 1:
+                if(gyro.isI2cPortReady()) state++;
+                else telemetry.addData("Waiting for port to be ready", "");
+                break;
+            case 2:
+                gyro.readI2cCacheFromController();
+                telemetry.addData("Read cache from controller", "");
+                state++;
+                break;
+            case 3:
+                telemetry.addData("Read cache: ", gyro.getCopyOfReadBuffer()[0]);
+                break;
         }
     }
 
@@ -92,13 +84,20 @@ public class GyroAuto extends OpMode {
         telemetry.addData("stop() called", "");
     }
 
-    private void performAction(String actionName, int port, int i2cAddress, int memAddress, int memLength) {
-        if (actionName.equalsIgnoreCase("read")) dim.enableI2cReadMode(port, i2cAddress, memAddress, memLength);
-        if (actionName.equalsIgnoreCase("write")) dim.enableI2cWriteMode(port, i2cAddress, memAddress, memLength);
+    private void performAction(String actionName, int i2cAddress, int memAddress, int memLength) {
+        if (actionName.equalsIgnoreCase("read")) gyro.enableI2cReadMode(i2cAddress, memAddress, memLength);
+        if (actionName.equalsIgnoreCase("write")) gyro.enableI2cWriteMode(i2cAddress, memAddress, memLength);
 
-        dim.setI2cPortActionFlag(port);
-        dim.writeI2cCacheToController(port);
-        dim.readI2cCacheFromController(port);
+        gyro.setI2cPortActionFlag();
+        gyro.writeI2cCacheToController();
+        gyro.readI2cCacheFromController();
+    }
+
+    public void delay(double seconds)
+    {
+        Timer timer = new Timer(seconds);
+        timer.start();
+        while(!timer.done());
     }
 
     static public class Timer {
