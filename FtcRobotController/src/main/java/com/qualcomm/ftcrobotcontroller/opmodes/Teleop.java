@@ -16,23 +16,26 @@ public class Teleop extends OpMode {
     DcMotor tapeMotor1;
     DcMotor tapeMotor2;
     Servo bucket;
+    Servo armRelease;
     //Servo arm;
 
     MediaPlayer mp = new MediaPlayer();
-    boolean passive = false;
 
     private static final String frontLeft =  "front_left";
     private static final String frontRight = "front_right";
     private static final String tape1Name = "tape_right";
     private static final String tape2Name = "tape_left";
     private static final String bucketName = "bucket";
-    //private static final String armName = "arm";
+    private static final String releaseName = "dropit";
 
     private static final double frontMotorMultiple = 1.0;
     private static final double triggerThresh = 0.05;
 
     private static final double bucketPowerUp = 0;
-    private static final double bucketPowerDown = 0.75;
+    private static final double bucketPowerDown = 0.80;
+
+    private static final double releasePowerUp = 0.2;
+    private static final double releasePowerDown = 0;
 
     //private static final double armUpPosition = 0.0;
     //private static final double armLeftPosition = -1.0;
@@ -56,7 +59,7 @@ public class Teleop extends OpMode {
         tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
         tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
         bucket = hardwareMap.servo.get(bucketName);
-        //arm = hardwareMap.servo.get(armName);
+        armRelease = hardwareMap.servo.get(releaseName);
 
         frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
@@ -80,13 +83,13 @@ public class Teleop extends OpMode {
         frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
 
         // update the position of everything else
-        if(gamepad1.x) passive=true;
-        else if(gamepad1.y) passive=false;
 
         if(gamepad1.right_trigger > triggerThresh) runTape(gamepad1.right_trigger);
         else if(gamepad1.left_trigger > triggerThresh) runTape(-gamepad1.left_trigger);
-        else if(passive) runTape(0.2);
         else runTape(0);
+
+        if(gamepad1.x) armRelease.setPosition(releasePowerUp);
+        else armRelease.setPosition(releasePowerDown);
 
         if(gamepad1.a) bucket.setPosition(bucketPowerUp);
         else bucket.setPosition(bucketPowerDown);
