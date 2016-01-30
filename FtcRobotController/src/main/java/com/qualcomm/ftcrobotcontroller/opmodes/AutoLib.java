@@ -3,6 +3,10 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.GyroSensor;
+import com.qualcomm.robotcore.util.Range;
+
+
 import android.media.MediaPlayer;
 import android.view.textservice.TextInfo;
 
@@ -183,26 +187,28 @@ public class AutoLib {
 
     //a Step which plays a song!
     static public class TimedSongStep extends Step {
-        MediaPlayer mp;
+        MediaPlayer mMp;
         Timer mTimer;
         boolean mUsingTimer = true;
 
-        public TimedSongStep(String fileName, int time) {
-            mp = new MediaPlayer();
+        public TimedSongStep(MediaPlayer mp, String fileName, int time) {
+            mMp = mp;
             if(time > 0) mTimer = new Timer(time);
             else mUsingTimer = false;
             try {
-                mp.setDataSource(fileName);
+                mMp.setDataSource(fileName);
+                mMp.prepare();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
         }
 
         public boolean loop(){
             super.loop();
 
             if(firstLoopCall()){
-                mp.start();
+                mMp.start();
                 if(mUsingTimer) mTimer.start();
             }
 
@@ -401,6 +407,105 @@ public class AutoLib {
                 this.add(new EncoderMotorStep(new EncoderMotor(bl), leftPower, leftCount, stop));
         }
 
+    }
+
+    static public class GyroMotorStep extends Step{
+        GyroSensor mGyro;
+        DcMotor mMotor;
+        double mPower;
+        int mGyroStop;
+        int mGyroLast;
+        double mPrecision;
+        boolean mStop;
+        Timer mTimer;
+        static boolean usingTimer;
+
+        public GyroMotorStep(DcMotor motor, GyroSensor gyro, double power, int gyroStop, double precision, boolean stop) { //pass through gyro
+            usingTimer = false;
+            mMotor = motor;
+            mPower = power;
+            mGyro = gyro;
+            mGyroStop = gyroStop;
+            mPrecision = precision;
+            mStop = stop;
+        }
+
+        public GyroMotorStep(DcMotor motor, GyroSensor gyro, double power, int gyroHold, boolean stop, int time){
+            usingTimer=true;
+            mMotor = motor;
+            mGyro = gyro;
+            mPower = power;
+            mGyroStop = gyroHold;
+            mStop = stop;
+            mTimer = new Timer(time);
+        }
+
+        public boolean loop() {
+            super.loop();
+
+            int gyroChange = mGyro.getHeading() - mGyroLast;
+            // start the Timer and start the motor on our first call
+            if (firstLoopCall()) {
+                mMotor.setPower(mPower);
+                mGyroLast = mGyro.getHeading();
+            }
+            else if(!usingTimer){
+                double scaledPower = ((gyroChange * 2) / 360.0) * mPower; //scales power down as robot gets closer
+                if(Math.abs(scaledPower) == scaledPower)
+                    scaledPower = Range.clip(scaledPower, 0.2, 1.0);
+                else
+                    scaledPower = Range.clip(scaledPower, -1.0, -0.2);
+                mMotor.setPower(scaledPower);
+            }
+            else{
+                double scaledPower = mPower - (gyroChange/360.0 * mPower);
+                if(Math.abs(scaledPower) == scaledPower)
+                    scaledPower = Range.clip(scaledPower, 0.2, 1.0);
+                else
+                    scaledPower = Range.clip(scaledPower, -1.0, -0.2);
+                mMotor.setPower(scaledPower);
+            }
+
+            // run the motor at the requested power until the Timer runs out
+            boolean done;
+            if(!usingTimer) done = (mGyroStop <= (mGyroStop + (mGyroStop * mPrecision)) && (mGyroStop <= (mGyroStop - (mGyroStop * mPrecision))));
+            else done = mTimer.done();
+
+            if (done && mStop)
+                mMotor.setPower(0);
+
+            return done;
+        }
+    }
+
+    static public class TurnByGyro extends ConcurrentSequence{
+
+        public TurnByGyro(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, GyroSensor gyro, double leftPower, double rightPower, int gyroCount, double precision, boolean stop) {
+            //reset gyro
+            if(fr != null)
+                this.add(new GyroMotorStep(fr, gyro, rightPower, gyroCount, precision, stop));
+            if(br != null)
+                this.add(new GyroMotorStep(br, gyro, rightPower, gyroCount, precision, stop));
+            if(fl != null)
+                this.add(new GyroMotorStep(fl, gyro, leftPower, gyroCount, precision, stop));
+            if(bl != null)
+                this.add(new GyroMotorStep(bl, gyro, leftPower, gyroCount, precision, stop));
+        }
+
+    }
+
+    static public class MoveByGyro extends ConcurrentSequence{
+
+        public  MoveByGyro(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, GyroSensor gyro, double power, int time, double precision, boolean stop){
+            if(fr != null)
+                this.add(new GyroMotorStep(fr, gyro, power, 0, stop, time));
+            if(br != null)
+                this.add(new GyroMotorStep(br, gyro, power, 0, stop, time));
+            if(fl != null)
+                this.add(new GyroMotorStep(fl, gyro, power, 0, stop, time));
+            if(bl != null)
+                this.add(new GyroMotorStep(bl, gyro, power, 0, stop, time));
+        }
     }
 
 

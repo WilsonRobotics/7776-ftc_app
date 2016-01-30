@@ -1,6 +1,8 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
 
 
+import android.media.MediaPlayer;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 
@@ -14,11 +16,14 @@ public class AutoTest1 extends OpMode {
 
     AutoLib.Sequence mSequence;     // the root of the sequence tree
     boolean bDone;                  // true when the programmed sequence is done
+    MediaPlayer mp;
 
     public AutoTest1() {
     }
 
     public void init() {
+        mp = new MediaPlayer();
+        //mp.setVolume(1.0f, 1.0f);
         // create the root Sequence for this autonomous OpMode
         mSequence = new AutoLib.LinearSequence();
 
@@ -26,18 +31,7 @@ public class AutoTest1 extends OpMode {
         mSequence.add(new AutoLib.LogTimeStep(this, "step1", 10));
 
         // create a ConcurrentSequence with 3 concurrent Steps
-        AutoLib.ConcurrentSequence cs1 = new AutoLib.ConcurrentSequence();
-            // step 1 of the 3 concurrent steps
-            cs1.add(new AutoLib.LogTimeStep(this, "step2a", 10));
-            // step 2 is itself a LinearSequence of two Steps
-            AutoLib.LinearSequence cs1a = new AutoLib.LinearSequence();
-                cs1a.add(new AutoLib.LogTimeStep(this, "step2b1", 6));
-                cs1a.add(new AutoLib.LogTimeStep(this, "step2b2", 9));
-            cs1.add(cs1a);
-            // step 3 is a simple Step
-            cs1.add(new AutoLib.LogTimeStep(this, "step2c", 5));
-        // add the ConcurrentSequence to the root Sequence
-        mSequence.add(cs1);
+        mSequence.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.wav", 2));
 
         // finish up with another simple Step
         mSequence.add(new AutoLib.LogTimeStep(this, "step3", 10));
