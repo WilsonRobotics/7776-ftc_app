@@ -4,6 +4,7 @@ import android.media.MediaPlayer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 /**
  * Created by Robotics  on 10/28/2015.
@@ -16,7 +17,8 @@ public class Teleop extends OpMode {
     DcMotor tapeMotor1;
     DcMotor tapeMotor2;
     Servo bucket;
-    Servo armRelease;
+    Servo armRelease1;
+    Servo armRelease2;
     //Servo arm;
 
     MediaPlayer mp = new MediaPlayer();
@@ -26,17 +28,19 @@ public class Teleop extends OpMode {
     private static final String tape1Name = "tape_right";
     private static final String tape2Name = "tape_left";
     private static final String bucketName = "bucket";
-    private static final String releaseName = "dropit";
+    private static final String release1Name = "dropit1";
+    private static final String release2Name = "dropit2";
 
     private static final double frontMotorMultiple = 1.0;
     private static final double triggerThresh = 0.05;
 
     private static final double bucketPowerUp = 0;
-    private static final double bucketPowerDown = 0.80;
+    private static final double bucketPowerDown = 0.90;
 
-    private static final double releasePowerUp = 0.2;
-    private static final double releasePowerDown = 0;
+    private static final double releasePowerUp = 0.55;
+    private static final double releasePowerDown = 0.0;
 
+    private double servoVal = 0.0;
     //private static final double armUpPosition = 0.0;
     //private static final double armLeftPosition = -1.0;
     //private static final double armRightPosition = 1.0;
@@ -59,12 +63,18 @@ public class Teleop extends OpMode {
         tapeMotor1 = hardwareMap.dcMotor.get(tape1Name);
         tapeMotor2 = hardwareMap.dcMotor.get(tape2Name);
         bucket = hardwareMap.servo.get(bucketName);
-        armRelease = hardwareMap.servo.get(releaseName);
+        armRelease1 = hardwareMap.servo.get(release1Name);
+        armRelease2 = hardwareMap.servo.get(release2Name);
 
         frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
         bucket.setPosition(bucketPowerDown);
         //arm.setPosition(armUpPosition);
+        armRelease1.setDirection(Servo.Direction.FORWARD);
+        armRelease2.setDirection(Servo.Direction.REVERSE);
+
+        armRelease1.setPosition(releasePowerDown);
+        armRelease2.setPosition(releasePowerDown);
     }
 
     @Override
@@ -88,8 +98,16 @@ public class Teleop extends OpMode {
         else if(gamepad1.left_trigger > triggerThresh) runTape(-gamepad1.left_trigger);
         else runTape(0);
 
-        if(gamepad1.x) armRelease.setPosition(releasePowerUp);
-        else armRelease.setPosition(releasePowerDown);
+        if(gamepad1.left_bumper) armRelease1.setPosition(releasePowerUp);
+        else armRelease1.setPosition(releasePowerDown);
+        //if(gamepad1.dpad_up) servoVal += 0.01;
+        //else if(gamepad1.dpad_down) servoVal -= 0.01;
+        //servoVal = Range.clip(servoVal, 0.0, 1.0);
+        //armRelease1.setPosition(servoVal);
+        //telemetry.addData("Servo: ", servoVal);
+
+        if(gamepad1.right_bumper) armRelease2.setPosition(releasePowerUp);
+        else armRelease2.setPosition(releasePowerDown);
 
         if(gamepad1.a) bucket.setPosition(bucketPowerUp);
         else bucket.setPosition(bucketPowerDown);

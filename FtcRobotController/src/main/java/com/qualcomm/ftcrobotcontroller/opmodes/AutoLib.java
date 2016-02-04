@@ -431,7 +431,7 @@ public class AutoLib {
         }
 
         public GyroMotorStep(DcMotor motor, GyroSensor gyro, double power, int gyroHold, boolean stop, int time){
-            usingTimer=true;
+            usingTimer = true;
             mMotor = motor;
             mGyro = gyro;
             mPower = power;
@@ -444,6 +444,7 @@ public class AutoLib {
             super.loop();
 
             int gyroChange = mGyro.getHeading() - mGyroLast;
+            if(gyroChange > 100) gyroChange -= 360;
             // start the Timer and start the motor on our first call
             if (firstLoopCall()) {
                 mMotor.setPower(mPower);
@@ -460,9 +461,9 @@ public class AutoLib {
             else{
                 double scaledPower = mPower - (gyroChange/360.0 * mPower);
                 if(Math.abs(scaledPower) == scaledPower)
-                    scaledPower = Range.clip(scaledPower, 0.2, 1.0);
+                    scaledPower = Range.clip(scaledPower, mPower, 1.0);
                 else
-                    scaledPower = Range.clip(scaledPower, -1.0, -0.2);
+                    scaledPower = Range.clip(scaledPower, -1.0, mPower);
                 mMotor.setPower(scaledPower);
             }
 

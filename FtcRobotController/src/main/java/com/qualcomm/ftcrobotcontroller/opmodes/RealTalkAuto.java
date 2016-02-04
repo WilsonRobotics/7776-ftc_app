@@ -28,8 +28,6 @@ public class RealTalkAuto extends OpMode {
 
     boolean red = true;
 
-    boolean red = true;
-
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
     private static final String back_left_name = "back_left";
@@ -95,6 +93,7 @@ public class RealTalkAuto extends OpMode {
         */
 
         mainSequence.add(new AutoLib.TurnByGyro(front_right, null, front_left, null, gyro, 0.5, -0.5, 45, 0.01, true));
+        //mainSequence.add(new AutoLib.MoveByGyro(front_right, null, front_left, null, gyro, 0.5, 10, 0.01, true));
 
         AutoLib.LinearSequence dumpingClimber = new AutoLib.LinearSequence();
         dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerUp, 2, false));
