@@ -159,11 +159,35 @@ public class SensorLib {
 
         // wrap given angle into range (-180 .. +180)
         public static float wrapAngle(float angle) {
-            if (angle > 180)
+            while (angle > 180)
                 angle -= 360;
-            if (angle < -180)
+            while (angle < -180)
                 angle += 360;
             return angle;
+        }
+
+    }
+
+    public static class PID {
+
+        private float mPrevError = 0;
+        private float mIntegral = 0;
+        private float mKp = 0;
+        private float mKi = 0;
+        private float mKd = 0;
+
+        public PID(float Kp, float Ki, float Kd) {
+            mKp = Kp;
+            mKi = Ki;
+            mKd = Kd;
+        }
+
+        public float loop(float error, float dt) {
+            mIntegral += error*dt;
+            float derivative = (dt > 0) ? (error - mPrevError)/dt : 0;
+            float output = mKp*error + mKi*mIntegral + mKd*derivative;
+            mPrevError = error;
+            return output;
         }
 
     }

@@ -37,10 +37,15 @@ public class Teleop extends OpMode {
     private static final double bucketPowerUp = 0;
     private static final double bucketPowerDown = 0.90;
 
-    private static final double releasePowerUp = 0.55;
-    private static final double releasePowerDown = 0.0;
+    private static final double flappyArmPowerUp = 0.55;
+    private static final double flappyArmPowerDown = 0.1;
 
     private double servoVal = 0.0;
+    private boolean leftBumperLastVal = false;
+    private boolean rightBumperLastVal = false;
+    private boolean flappyArmLeftPos = false;
+    private boolean flappyArmRightPos = false;
+
     //private static final double armUpPosition = 0.0;
     //private static final double armLeftPosition = -1.0;
     //private static final double armRightPosition = 1.0;
@@ -48,7 +53,7 @@ public class Teleop extends OpMode {
     //constructor
     public Teleop() {
         try{
-            mp.setDataSource("/storage/emulated/0/JOHNCENA.mp3");//Write your location here
+            mp.setDataSource("/storage/emulated/0/BUCKETS.mp3");//Write your location here
             mp.prepare();
         }catch(Exception e){ e.printStackTrace(); }
 
@@ -73,13 +78,13 @@ public class Teleop extends OpMode {
         armRelease1.setDirection(Servo.Direction.FORWARD);
         armRelease2.setDirection(Servo.Direction.REVERSE);
 
-        armRelease1.setPosition(releasePowerDown);
-        armRelease2.setPosition(releasePowerDown);
+        armRelease1.setPosition(flappyArmPowerDown);
+        armRelease2.setPosition(flappyArmPowerDown);
     }
 
     @Override
     public void start(){
-        mp.start();
+
     }
 
     @Override
@@ -98,18 +103,31 @@ public class Teleop extends OpMode {
         else if(gamepad1.left_trigger > triggerThresh) runTape(-gamepad1.left_trigger);
         else runTape(0);
 
-        if(gamepad1.left_bumper) armRelease1.setPosition(releasePowerUp);
-        else armRelease1.setPosition(releasePowerDown);
+        // toggle flappy arm positions
+        if(gamepad1.left_bumper && !leftBumperLastVal) flappyArmLeftPos = !flappyArmLeftPos;
+        leftBumperLastVal = gamepad1.left_bumper;
+
+        if(gamepad1.right_bumper && !rightBumperLastVal) flappyArmRightPos = !flappyArmRightPos;
+        rightBumperLastVal = gamepad1.right_bumper;
+
+        // update flappy arm positions
+        if(flappyArmLeftPos) armRelease1.setPosition(flappyArmPowerUp);
+        else armRelease1.setPosition(flappyArmPowerDown);
+
+        if(flappyArmRightPos) armRelease2.setPosition(flappyArmPowerUp);
+        else armRelease2.setPosition(flappyArmPowerDown);
+
+
         //if(gamepad1.dpad_up) servoVal += 0.01;
         //else if(gamepad1.dpad_down) servoVal -= 0.01;
         //servoVal = Range.clip(servoVal, 0.0, 1.0);
         //armRelease1.setPosition(servoVal);
         //telemetry.addData("Servo: ", servoVal);
 
-        if(gamepad1.right_bumper) armRelease2.setPosition(releasePowerUp);
-        else armRelease2.setPosition(releasePowerDown);
-
-        if(gamepad1.a) bucket.setPosition(bucketPowerUp);
+        if(gamepad1.a){
+            bucket.setPosition(bucketPowerUp);
+            mp.start();
+        }
         else bucket.setPosition(bucketPowerDown);
 
         //if(gamepad1.dpad_up) arm.setPosition(armUpPosition);

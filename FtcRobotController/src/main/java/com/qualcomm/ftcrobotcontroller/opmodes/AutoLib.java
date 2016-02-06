@@ -189,29 +189,32 @@ public class AutoLib {
     static public class TimedSongStep extends Step {
         MediaPlayer mMp;
         Timer mTimer;
+        String mFileName;
         boolean mUsingTimer = true;
 
         public TimedSongStep(MediaPlayer mp, String fileName, int time) {
             mMp = mp;
+            mFileName = fileName;
             if(time > 0) mTimer = new Timer(time);
             else mUsingTimer = false;
-            try {
-                mMp.setDataSource(fileName);
-                mMp.prepare();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
         }
 
         public boolean loop(){
             super.loop();
 
             if(firstLoopCall()){
+                try {
+                    mMp.reset();
+                    mMp.setDataSource(mFileName);
+                    mMp.prepare();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 mMp.start();
                 if(mUsingTimer) mTimer.start();
             }
 
+            if(mUsingTimer) if(mTimer.done()) mMp.stop();
             if(mUsingTimer) return mTimer.done();
             else return true;
         }

@@ -28,13 +28,14 @@ public class AutoTest1 extends OpMode {
         mSequence = new AutoLib.LinearSequence();
 
         // add a first simple Step to the root Sequence
-        mSequence.add(new AutoLib.LogTimeStep(this, "step1", 10));
+        //mSequence.add(new AutoLib.LogTimeStep(this, "step1", 10));
 
         // create a ConcurrentSequence with 3 concurrent Steps
-        mSequence.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.wav", 2));
+        mSequence.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.mp3", 2));
+        mSequence.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/JOHNCENA.mp3", 10));
 
         // finish up with another simple Step
-        mSequence.add(new AutoLib.LogTimeStep(this, "step3", 10));
+        //mSequence.add(new AutoLib.LogTimeStep(this, "step3", 10));
 
         // start out not-done
         bDone = false;
@@ -48,5 +49,6 @@ public class AutoTest1 extends OpMode {
 
     public void stop() {
         telemetry.addData("stop() called", "");
+        mp.stop();
     }
 }

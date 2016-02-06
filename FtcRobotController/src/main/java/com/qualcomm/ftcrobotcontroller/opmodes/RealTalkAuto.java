@@ -25,8 +25,10 @@ public class RealTalkAuto extends OpMode {
     GyroSensor gyro;
     Servo bucket;
     MediaPlayer mp;
+    Servo armRelease1;
+    Servo armRelease2;
 
-    boolean red = true;
+    boolean red = false;
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -38,6 +40,8 @@ public class RealTalkAuto extends OpMode {
     private static final String color_sensor_name = "color";
     private static final String left_claw_name = "left_claw";
     private static final String right_claw_name = "right_claw";
+    private static final String release1Name = "dropit1";
+    private static final String release2Name = "dropit2";
 
     private static final double forward_power = 1.0;
     private static final double mountain_idle_power = 0.1;
@@ -50,6 +54,8 @@ public class RealTalkAuto extends OpMode {
     private static final double right_servo_lower = 1.0;
     private static final double bucketPowerUp = 0;
     private static final double bucketPowerDown = 1;
+    private static final double flappyArmPowerUp = 0.55;
+    private static final double flappyArmPowerDown = 0.1;
 
     public RealTalkAuto() {
     }
@@ -58,10 +64,16 @@ public class RealTalkAuto extends OpMode {
         front_left = hardwareMap.dcMotor.get(front_left_name);
         front_right = hardwareMap.dcMotor.get(front_right_name);
         bucket = hardwareMap.servo.get(bucket_name);
-        gyro = hardwareMap.gyroSensor.get(gyro_name);
-        gyro.calibrate();
+        armRelease1 = hardwareMap.servo.get(release1Name);
+        armRelease2 = hardwareMap.servo.get(release2Name);
 
         front_right.setDirection(DcMotor.Direction.REVERSE);
+
+        armRelease1.setDirection(Servo.Direction.FORWARD);
+        armRelease2.setDirection(Servo.Direction.REVERSE);
+
+        armRelease1.setPosition(flappyArmPowerDown);
+        armRelease2.setPosition(flappyArmPowerDown);
 
         mp = new MediaPlayer();
         mp.setVolume(1.0f, 1.0f);
@@ -70,8 +82,7 @@ public class RealTalkAuto extends OpMode {
 
         bucket.setPosition(bucketPowerDown);
 
-        /*
-        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
@@ -81,26 +92,28 @@ public class RealTalkAuto extends OpMode {
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 forward_power, -forward_power, 1300, 1300, true));
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power, 10000, true));
+                forward_power, 9500, true));
         if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 1200, 1200, true));
+                -forward_power, forward_power, 1300, 1300, true));
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 1200, 1200, true));
+                -forward_power, forward_power, 1300, 1300, true));
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
                 forward_power/2, 3000, true));
         mainSequence.add(drivingToBox);
 
-        */
 
-        mainSequence.add(new AutoLib.TurnByGyro(front_right, null, front_left, null, gyro, 0.5, -0.5, 45, 0.01, true));
+        //mainSequence.add(new AutoLib.TurnByGyro(front_right, null, front_left, null, gyro, 0.5, -0.5, 45, 0.01, true));
         //mainSequence.add(new AutoLib.MoveByGyro(front_right, null, front_left, null, gyro, 0.5, 10, 0.01, true));
 
-        AutoLib.LinearSequence dumpingClimber = new AutoLib.LinearSequence();
+        /*
+        AutoLib.ConcurrentSequence dumpingClimber = new AutoLib.ConcurrentSequence();
         dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerUp, 2, false));
-        dumpingClimber.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.wav", 2));
-        dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1, false));
+        dumpingClimber.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.mp3", 2));
+        AutoLib.LinearSequence dumpingClimber2 = new AutoLib.LinearSequence();
+        dumpingClimber2.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1, false));
         mainSequence.add(dumpingClimber);
-
+        mainSequence.add(dumpingClimber2);
+        */
         AutoLib.LinearSequence playingAwesome = new AutoLib.LinearSequence();
         playingAwesome.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/JOHNCENA.mp3", 10000));
 
