@@ -382,15 +382,15 @@ public class AutoLib {
     // a Sequence that moves a four-motor robot in a straight line with given power for given encoder count
     static public class MoveByEncoder extends ConcurrentSequence {
 
-        public MoveByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double power, double count, boolean stop) {
+        public MoveByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rPower, double lPower, double count, boolean stop) {
             if(fr != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(fr), power, count, stop));
+                this.add(new EncoderMotorStep(new EncoderMotor(fr), rPower, count, stop));
             if(br != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(br), power, count, stop));
+                this.add(new EncoderMotorStep(new EncoderMotor(br), rPower, count, stop));
             if(fl != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(fl), power, count, stop));
+                this.add(new EncoderMotorStep(new EncoderMotor(fl), lPower, count, stop));
             if(bl != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(bl), power, count, stop));
+                this.add(new EncoderMotorStep(new EncoderMotor(bl), lPower, count, stop));
         }
 
     }

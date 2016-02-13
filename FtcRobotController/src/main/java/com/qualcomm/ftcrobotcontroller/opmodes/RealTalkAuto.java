@@ -29,6 +29,8 @@ public class RealTalkAuto extends OpMode {
     Servo armRelease2;
 
     boolean red = false;
+    boolean leftReverse = false;
+    boolean rightReverse = true;
 
     private static final String front_left_name = "front_left";
     private static final String front_right_name = "front_right";
@@ -44,6 +46,8 @@ public class RealTalkAuto extends OpMode {
     private static final String release2Name = "dropit2";
 
     private static final double forward_power = 1.0;
+    private static double left_forward_power;
+    private static double right_forward_power;
     private static final double mountain_idle_power = 0.1;
     private static final int red_thresh = 128;
     private static final int blue_thresh = 128;
@@ -55,9 +59,14 @@ public class RealTalkAuto extends OpMode {
     private static final double bucketPowerUp = 0;
     private static final double bucketPowerDown = 1;
     private static final double flappyArmPowerUp = 0.55;
-    private static final double flappyArmPowerDown = 0.1;
+    private static final double flappyArmPowerDown = 0.0;
 
     public RealTalkAuto() {
+        if(rightReverse) right_forward_power=-forward_power;
+        else right_forward_power=forward_power;
+
+        if(leftReverse) left_forward_power=-forward_power;
+        else left_forward_power=forward_power;
     }
 
     public void init() {
@@ -67,7 +76,8 @@ public class RealTalkAuto extends OpMode {
         armRelease1 = hardwareMap.servo.get(release1Name);
         armRelease2 = hardwareMap.servo.get(release2Name);
 
-        front_right.setDirection(DcMotor.Direction.REVERSE);
+        //front_right.setDirection(DcMotor.Direction.REVERSE);
+        //front_left.setDirection(DcMotor.Direction.REVERSE);
 
         armRelease1.setDirection(Servo.Direction.FORWARD);
         armRelease2.setDirection(Servo.Direction.REVERSE);
@@ -77,30 +87,6 @@ public class RealTalkAuto extends OpMode {
 
         mp = new MediaPlayer();
         mp.setVolume(1.0f, 1.0f);
-
-        mainSequence = new AutoLib.LinearSequence();
-
-        bucket.setPosition(bucketPowerDown);
-
-        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
-
-        AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power, 4500, true));
-        if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 1300, 1300, true));
-        else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                forward_power, -forward_power, 1300, 1300, true));
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power, 9500, true));
-        if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 1300, 1300, true));
-        else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
-                -forward_power, forward_power, 1300, 1300, true));
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power/2, 3000, true));
-        mainSequence.add(drivingToBox);
-
 
         //mainSequence.add(new AutoLib.TurnByGyro(front_right, null, front_left, null, gyro, 0.5, -0.5, 45, 0.01, true));
         //mainSequence.add(new AutoLib.MoveByGyro(front_right, null, front_left, null, gyro, 0.5, 10, 0.01, true));
@@ -114,6 +100,30 @@ public class RealTalkAuto extends OpMode {
         mainSequence.add(dumpingClimber);
         mainSequence.add(dumpingClimber2);
         */
+
+        mainSequence = new AutoLib.LinearSequence();
+
+        bucket.setPosition(bucketPowerDown);
+
+        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+
+        AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
+        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                right_forward_power, left_forward_power, 4500, true));
+        if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                -right_forward_power, left_forward_power, 1300, 1300, true));
+        else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                right_forward_power, -left_forward_power, 1300, 1300, true));
+        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                right_forward_power, left_forward_power, 9500, true));
+        if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                -right_forward_power, left_forward_power, 1300, 1300, true));
+        else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                right_forward_power, -left_forward_power, 1300, 1300, true));
+        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
+                right_forward_power/2, left_forward_power/2, 3000, true));
+        mainSequence.add(drivingToBox);
+
         AutoLib.LinearSequence playingAwesome = new AutoLib.LinearSequence();
         playingAwesome.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/JOHNCENA.mp3", 10000));
 

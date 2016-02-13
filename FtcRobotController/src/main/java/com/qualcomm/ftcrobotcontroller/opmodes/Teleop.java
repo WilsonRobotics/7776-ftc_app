@@ -21,7 +21,8 @@ public class Teleop extends OpMode {
     Servo armRelease2;
     //Servo arm;
 
-    MediaPlayer mp = new MediaPlayer();
+    MediaPlayer bucketPlay = new MediaPlayer();
+    MediaPlayer eaglePlay = new MediaPlayer();
 
     private static final String frontLeft =  "front_left";
     private static final String frontRight = "front_right";
@@ -40,6 +41,9 @@ public class Teleop extends OpMode {
     private static final double flappyArmPowerUp = 0.55;
     private static final double flappyArmPowerDown = 0.1;
 
+    private static final boolean lReverse = true;
+    private static final boolean rReverse = false;
+
     private double servoVal = 0.0;
     private boolean leftBumperLastVal = false;
     private boolean rightBumperLastVal = false;
@@ -53,8 +57,10 @@ public class Teleop extends OpMode {
     //constructor
     public Teleop() {
         try{
-            mp.setDataSource("/storage/emulated/0/BUCKETS.mp3");//Write your location here
-            mp.prepare();
+            bucketPlay.setDataSource("/storage/emulated/0/BUCKETS.mp3");//Write your location here
+            bucketPlay.prepare();
+            eaglePlay.setDataSource("/storage/emulated/0/EAGLE.mp3");
+            eaglePlay.prepare();
         }catch(Exception e){ e.printStackTrace(); }
 
     }
@@ -71,7 +77,7 @@ public class Teleop extends OpMode {
         armRelease1 = hardwareMap.servo.get(release1Name);
         armRelease2 = hardwareMap.servo.get(release2Name);
 
-        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
         bucket.setPosition(bucketPowerDown);
         //arm.setPosition(armUpPosition);
@@ -95,7 +101,11 @@ public class Teleop extends OpMode {
 
         // write the values to the motors
         frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
-        frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
+        if(lReverse) frontLeftMotor.setPower(-(leftThrottle * frontMotorMultiple));
+        else frontLeftMotor.setPower(leftThrottle * frontMotorMultiple);
+
+        if(rReverse) frontRightMotor.setPower(-(rightThrottle * frontMotorMultiple));
+        else frontRightMotor.setPower(rightThrottle * frontMotorMultiple);
 
         // update the position of everything else
 
@@ -104,10 +114,16 @@ public class Teleop extends OpMode {
         else runTape(0);
 
         // toggle flappy arm positions
-        if(gamepad1.left_bumper && !leftBumperLastVal) flappyArmLeftPos = !flappyArmLeftPos;
+        if(gamepad1.left_bumper && !leftBumperLastVal) {
+            flappyArmLeftPos = !flappyArmLeftPos;
+            if(flappyArmLeftPos) eaglePlay.start();
+        }
         leftBumperLastVal = gamepad1.left_bumper;
 
-        if(gamepad1.right_bumper && !rightBumperLastVal) flappyArmRightPos = !flappyArmRightPos;
+        if(gamepad1.right_bumper && !rightBumperLastVal) {
+            flappyArmRightPos = !flappyArmRightPos;
+            if(flappyArmRightPos) eaglePlay.start();
+        }
         rightBumperLastVal = gamepad1.right_bumper;
 
         // update flappy arm positions
@@ -126,7 +142,7 @@ public class Teleop extends OpMode {
 
         if(gamepad1.a){
             bucket.setPosition(bucketPowerUp);
-            mp.start();
+            bucketPlay.start();
         }
         else bucket.setPosition(bucketPowerDown);
 
@@ -148,7 +164,7 @@ public class Teleop extends OpMode {
     @Override
     public void stop() {
         telemetry.addData("Text", "****ROBOT IS STOPPED****");
-        mp.stop();
+        bucketPlay.stop();
     }
 
     private void runTape(double power){
