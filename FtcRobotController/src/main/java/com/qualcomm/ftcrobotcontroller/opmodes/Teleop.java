@@ -44,9 +44,10 @@ public class Teleop extends OpMode {
 
     private static final double flappyArmPowerUp = 0.65;
     private static final double flappyArmPowerDown = 0.1;
+    private static final double rightOffset = 0.08; //negative offset for the right servo
 
-    private static final double flagPullPowerUp = 0.0;
-    private static final double flagPullPowerDown = 0.5;
+    private static final double flagPullPowerUp = 1.0;
+    private static final double flagPullPowerDown = 0.0;
 
     private static final boolean lReverse = true;
     private static final boolean rReverse = false;
@@ -96,9 +97,14 @@ public class Teleop extends OpMode {
         //arm.setPosition(armUpPosition);
         armRelease1.setDirection(Servo.Direction.FORWARD);
         armRelease2.setDirection(Servo.Direction.REVERSE);
+        flag1.setDirection(Servo.Direction.FORWARD);
+        flag2.setDirection(Servo.Direction.REVERSE);
 
         armRelease1.setPosition(flappyArmPowerDown);
-        armRelease2.setPosition(flappyArmPowerDown);
+        armRelease2.setPosition(flappyArmPowerDown - rightOffset);
+
+        flag1.setPosition(flagPullPowerDown);
+        flag2.setPosition(flagPullPowerDown+0.04);
     }
 
     @Override
@@ -150,14 +156,15 @@ public class Teleop extends OpMode {
         if(flappyArmLeftPos) armRelease1.setPosition(flappyArmPowerUp);
         else armRelease1.setPosition(flappyArmPowerDown);
 
-        if(flappyArmRightPos) armRelease2.setPosition(flappyArmPowerUp);
-        else armRelease2.setPosition(flappyArmPowerDown);
+        if(flappyArmRightPos) armRelease2.setPosition(flappyArmPowerUp-rightOffset);
+        else armRelease2.setPosition(flappyArmPowerDown-rightOffset);
 
+        // update flag pull positions
         if(flagPullLeftPos) flag1.setPosition(flagPullPowerUp);
         else flag1.setPosition(flagPullPowerDown);
 
         if(flagPullRightPos) flag2.setPosition(flagPullPowerUp);
-        else flag2.setPosition(flagPullPowerDown);
+        else flag2.setPosition(flagPullPowerDown+0.04);
 
 
         //if(gamepad1.dpad_up) servoVal += 0.01;
