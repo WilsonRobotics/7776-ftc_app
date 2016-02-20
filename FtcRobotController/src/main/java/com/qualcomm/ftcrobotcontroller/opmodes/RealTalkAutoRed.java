@@ -24,7 +24,7 @@ public class RealTalkAutoRed extends OpMode {
     DcMotor front_right;
     GyroSensor gyro;
     Servo bucket;
-    MediaPlayer mp;
+    MediaPlayer mp = new MediaPlayer();
     Servo armRelease1;
     Servo armRelease2;
 
@@ -87,25 +87,11 @@ public class RealTalkAutoRed extends OpMode {
 
         mp = new MediaPlayer();
         mp.setVolume(1.0f, 1.0f);
-
-        //mainSequence.add(new AutoLib.TurnByGyro(front_right, null, front_left, null, gyro, 0.5, -0.5, 45, 0.01, true));
-        //mainSequence.add(new AutoLib.MoveByGyro(front_right, null, front_left, null, gyro, 0.5, 10, 0.01, true));
-
-        /*
-        AutoLib.ConcurrentSequence dumpingClimber = new AutoLib.ConcurrentSequence();
-        dumpingClimber.add(new AutoLib.TimedServoStep(bucket, bucketPowerUp, 2, false));
-        dumpingClimber.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.mp3", 2));
-        AutoLib.LinearSequence dumpingClimber2 = new AutoLib.LinearSequence();
-        dumpingClimber2.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1, false));
-        mainSequence.add(dumpingClimber);
-        mainSequence.add(dumpingClimber2);
-        */
-
         mainSequence = new AutoLib.LinearSequence();
 
         bucket.setPosition(bucketPowerDown);
 
-        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,

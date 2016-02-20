@@ -42,7 +42,7 @@ public class Teleop extends OpMode {
     private static final double bucketPowerUp = 0;
     private static final double bucketPowerDown = 0.90;
 
-    private static final double flappyArmPowerUp = 0.55;
+    private static final double flappyArmPowerUp = 0.65;
     private static final double flappyArmPowerDown = 0.1;
 
     private static final double flagPullPowerUp = 0.0;

@@ -105,7 +105,7 @@ public class RealTalkAuto extends OpMode {
 
         bucket.setPosition(bucketPowerDown);
 
-        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
         drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
