@@ -19,6 +19,8 @@ public class Teleop extends OpMode {
     Servo bucket;
     Servo armRelease1;
     Servo armRelease2;
+    Servo flag1;
+    Servo flag2;
     //Servo arm;
 
     MediaPlayer bucketPlay = new MediaPlayer();
@@ -31,6 +33,8 @@ public class Teleop extends OpMode {
     private static final String bucketName = "bucket";
     private static final String release1Name = "dropit1";
     private static final String release2Name = "dropit2";
+    private static final String flag1Name = "flag_left";
+    private static final String flag2Name = "flag_right";
 
     private static final double frontMotorMultiple = 1.0;
     private static final double triggerThresh = 0.05;
@@ -41,14 +45,21 @@ public class Teleop extends OpMode {
     private static final double flappyArmPowerUp = 0.55;
     private static final double flappyArmPowerDown = 0.1;
 
+    private static final double flagPullPowerUp = 0.0;
+    private static final double flagPullPowerDown = 0.5;
+
     private static final boolean lReverse = true;
     private static final boolean rReverse = false;
 
     private double servoVal = 0.0;
     private boolean leftBumperLastVal = false;
     private boolean rightBumperLastVal = false;
+    private boolean leftTriggerLastVal = false;
+    private boolean rightTriggerLastVal = false;
     private boolean flappyArmLeftPos = false;
     private boolean flappyArmRightPos = false;
+    private boolean flagPullLeftPos = false;
+    private boolean flagPullRightPos = false;
 
     //private static final double armUpPosition = 0.0;
     //private static final double armLeftPosition = -1.0;
@@ -76,6 +87,8 @@ public class Teleop extends OpMode {
         bucket = hardwareMap.servo.get(bucketName);
         armRelease1 = hardwareMap.servo.get(release1Name);
         armRelease2 = hardwareMap.servo.get(release2Name);
+        flag1 = hardwareMap.servo.get(flag1Name);
+        flag2 = hardwareMap.servo.get(flag2Name);
 
         //frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
         tapeMotor1.setDirection(DcMotor.Direction.REVERSE);
@@ -114,17 +127,24 @@ public class Teleop extends OpMode {
         else runTape(0);
 
         // toggle flappy arm positions
-        if(gamepad1.left_bumper && !leftBumperLastVal) {
+        if(gamepad2.left_trigger > triggerThresh && !leftTriggerLastVal) {
             flappyArmLeftPos = !flappyArmLeftPos;
             if(flappyArmLeftPos) eaglePlay.start();
         }
-        leftBumperLastVal = gamepad1.left_bumper;
+        leftTriggerLastVal = gamepad2.left_trigger > triggerThresh;
 
-        if(gamepad1.right_bumper && !rightBumperLastVal) {
+        if(gamepad2.right_trigger > triggerThresh && !rightTriggerLastVal) {
             flappyArmRightPos = !flappyArmRightPos;
             if(flappyArmRightPos) eaglePlay.start();
         }
-        rightBumperLastVal = gamepad1.right_bumper;
+        rightTriggerLastVal = gamepad2.right_trigger > triggerThresh;
+
+        //toggle flag pull positions
+        if(gamepad2.left_bumper && !leftBumperLastVal) flagPullLeftPos = !flagPullLeftPos;
+        leftBumperLastVal = gamepad2.left_bumper;
+
+        if(gamepad2.right_bumper && !rightBumperLastVal) flagPullRightPos = !flagPullRightPos;
+        rightBumperLastVal = gamepad2.right_bumper;
 
         // update flappy arm positions
         if(flappyArmLeftPos) armRelease1.setPosition(flappyArmPowerUp);
@@ -132,6 +152,12 @@ public class Teleop extends OpMode {
 
         if(flappyArmRightPos) armRelease2.setPosition(flappyArmPowerUp);
         else armRelease2.setPosition(flappyArmPowerDown);
+
+        if(flagPullLeftPos) flag1.setPosition(flagPullPowerUp);
+        else flag1.setPosition(flagPullPowerDown);
+
+        if(flagPullRightPos) flag2.setPosition(flagPullPowerUp);
+        else flag2.setPosition(flagPullPowerDown);
 
 
         //if(gamepad1.dpad_up) servoVal += 0.01;
