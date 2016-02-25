@@ -2,7 +2,7 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.GyroSensor;
-//import com.qualcomm.hardware.ModernRoboticsI2cGyro;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 
 
 /**
@@ -11,27 +11,34 @@ import com.qualcomm.robotcore.hardware.GyroSensor;
  */
 public class GyroTestOp extends OpMode {
 
-    private GyroSensor mGyro;
+    private ModernRoboticsI2cGyro mGyro1, mGyro2;
+    private SensorLib.CorrectedMRGyro mCorrGyro;
 
     public GyroTestOp() {
     }
 
     public void init() {
-        // get hardware gyro and start calibrating it
-        mGyro = (GyroSensor) hardwareMap.gyroSensor.get("gyro");
-        mGyro.calibrate();      // start calibration -- wait for it to complete in loop() function
+        // get hardware gyro(s) -- we support either one or two, where the second is assumed
+        // to be mounted in opposite z-orientation to the first.
+        mGyro1 = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro1");
+        try { mGyro2 = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro2"); }
+        catch (Exception e) { mGyro2 = null; }
+
+        // wrap gyro1 (and optional gyro2, if present) in an object that corrects its output
+        mCorrGyro = new SensorLib.CorrectedMRGyro((ModernRoboticsI2cGyro) mGyro1, (ModernRoboticsI2cGyro) mGyro2);
+        mCorrGyro.calibrate();      // calibrate the underlying hardware gyro
     }
 
     public void loop() {
-        telemetry.addData("status:  ", mGyro.isCalibrating() ? "calibrating" : "ready");
-        telemetry.addData("heading: ", mGyro.isCalibrating() ? "calibrating" : mGyro.getHeading());
-        //if (mGyro instanceof ModernRoboticsI2cGyro) {
-        //    telemetry.addData("integrated z: ", mGyro.isCalibrating() ? "calibrating" : ((ModernRoboticsI2cGyro)mGyro).getIntegratedZValue());
-        //}
+        boolean calibrating = mGyro1.isCalibrating() || (mGyro2 != null && mGyro2.isCalibrating());
+        telemetry.addData("status:  ", calibrating ? "calibrating" : "ready");
+        telemetry.addData("integrated z1: ", mCorrGyro.getIntegratedZValue1());
+        telemetry.addData("integrated z2: ", mCorrGyro.getIntegratedZValue2());
+        telemetry.addData("corrected heading: ", mCorrGyro.getHeading());
     }
 
     public void stop() {
-        mGyro.close();
+        mCorrGyro.stop();       // release the physical gyro(s) we're using
     }
 
 }

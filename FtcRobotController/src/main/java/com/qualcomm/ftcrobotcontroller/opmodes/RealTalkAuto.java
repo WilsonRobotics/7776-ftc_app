@@ -108,20 +108,20 @@ public class RealTalkAuto extends OpMode {
         mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                right_forward_power, left_forward_power, 4500, true));
+        drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                right_forward_power, left_forward_power, 4500, 4500, true));
         if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -right_forward_power, left_forward_power, 1300, 1300, true));
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 right_forward_power, -left_forward_power, 1300, 1300, true));
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                right_forward_power, left_forward_power, 9500, true));
+        drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                right_forward_power, left_forward_power, 9500, 9500, true));
         if(!red) drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -right_forward_power, left_forward_power, 1300, 1300, true));
         else drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 right_forward_power, -left_forward_power, 1300, 1300, true));
-        drivingToBox.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                right_forward_power/2, left_forward_power/2, 3000, true));
+        drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                right_forward_power/2, left_forward_power/2, 3000, 3000, true));
         mainSequence.add(drivingToBox);
 
         AutoLib.LinearSequence playingAwesome = new AutoLib.LinearSequence();

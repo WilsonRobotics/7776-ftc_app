@@ -85,14 +85,14 @@ public class RealTalkAutoMountain extends OpMode {
         //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToMountain = new AutoLib.LinearSequence();
-        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power,forward_power, 2000, true));
+        drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                forward_power,forward_power, 2000, 2000, true));
         if(!red) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 1200, 1200, true));
         else drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 forward_power, -forward_power, 1300, 1300, true));
-        drivingToMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power, forward_power, 7000, true));
+        drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                forward_power, forward_power, 7000, 7000, true));
         if(!red) drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
                 -forward_power, forward_power, 2200, 2200, true));
         else drivingToMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
@@ -100,8 +100,8 @@ public class RealTalkAutoMountain extends OpMode {
         mainSequence.add(drivingToMountain);
 
         AutoLib.LinearSequence drivingUpMountain = new AutoLib.LinearSequence();
-        drivingUpMountain.add(new AutoLib.MoveByEncoder(front_right, null, front_left, null,
-                forward_power/2, forward_power/2, 3000, true));
+        drivingUpMountain.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
+                forward_power/2, forward_power/2, 3000, 3000, true));
         mainSequence.add(drivingUpMountain);
 
 

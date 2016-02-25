@@ -2,44 +2,31 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-//import com.qualcomm.hardware.ModernRoboticsI2cGyro;
-import com.qualcomm.robotcore.hardware.GyroSensor;
-import com.qualcomm.robotcore.util.Range;
-
 
 /**
- * simple example of using a Step that drives along a given azimuth for a given time
- * Created by phanau on 1/3/16.
+ * simple example of using a Step that drives along a given azimuth using the phone compass for a given time
+ * Created by phanau on 1/3/16. Reverted to that version on 2/16/16 -- gyro-based version is now GyroDriveTestOp
  */
 
-
+// this is a local version that uses the phone compass - the current gyro-based version is in AutoLib
 class AzimuthTimedDriveStep extends AutoLib.Step {
-
     private AutoLib.Timer mTimer;
-    private DcMotor mMotors[];                          // the (up to 4) motors we're controlling - assumed order is fr, br, fl, bl
+    private DcMotor mMotors[];                          // the (4) motors we're controlling - assumed order is fr, br, fl, bl
     private float mPower;                               // basic power setting of all 4 motors -- adjusted for steering along path
     private boolean mStop;                              // if true, stop motors when this step completes
     private OpMode mOpMode;                             // needed so we can log output
     private float mHeading;                             // compass heading to steer for (-180 .. +180 degrees)
-    private GyroSensor mGyro;                           // sensor to use for heading information
-    private SensorLib.PID pid;                          // proportional–integral–derivative controller (PID controller)
-    private double mPrevTime;                           // time of previous loop() call
+    private SensorLib.FilteredDirectionSensor mFDS;     // sensor to use for azimuth input
 
-    public AzimuthTimedDriveStep(OpMode mode, float heading, GyroSensor sensor,
+    public AzimuthTimedDriveStep(float heading, SensorLib.FilteredDirectionSensor sensor,
                                  DcMotor motors[], float power, float seconds, boolean stop)
     {
-        mOpMode = mode;
         mHeading = heading;
         mMotors = motors;
         mPower = power;
         mTimer = new AutoLib.Timer(seconds);
         mStop = stop;
-        mGyro = sensor;
-
-        final float Kp = 0.05f;    // motor power proportional term correction per degree of deviation
-        final float Ki = 0;        // ... integrator term
-        final float Kd = 0;        // ... derivative term
-        pid = new SensorLib.PID(Kp, Ki, Kd);
+        mFDS = sensor;
     }
 
     public boolean loop() {
@@ -48,46 +35,32 @@ class AzimuthTimedDriveStep extends AutoLib.Step {
         // start the Timer on our first call
         if (firstLoopCall()) {
             mTimer.start();
-            mPrevTime = mTimer.elapsed();
         }
 
-        float heading = mGyro.getHeading();     // get latest reading from direction sensor
-        // convention is positive angles CW, wrapping from 359-0
-
-        float error = SensorLib.Utils.wrapAngle(heading-mHeading);   // deviation from desired heading
+        // compute motor power based on our current heading vs. desired heading
+        float heading = mFDS.azimuth();     // get latest reading from filtered direction sensor
+        float diff = SensorLib.Utils.wrapAngle(heading-mHeading);   // deviation from desired heading
         // deviations to left are negative, to right are positive
+        final float corrPower = 0.005f;       // motor power correction per degree of deviation
+        float rightPower = mPower + diff*corrPower;
+        float leftPower = mPower - diff*corrPower;
 
-        // compute right/left motor powers based on our current heading vs. desired heading
-        float dt = (float)(mTimer.elapsed() - mPrevTime);
-        float correction = pid.loop(error, dt);
-        float rightPower = Range.clip(mPower + correction, -1, 1);
-        float leftPower = Range.clip(mPower - correction, -1, 1);
+        // set the appropriate motor powers
+        mMotors[0].setPower(rightPower);
+        mMotors[1].setPower(rightPower);
+        mMotors[2].setPower(leftPower);
+        mMotors[3].setPower(leftPower);
 
-        // set the motor powers
-        if (mMotors[0] != null)
-            mMotors[0].setPower(rightPower);
-        if (mMotors[1] != null)
-            mMotors[1].setPower(rightPower);
-        if (mMotors[2] != null)
-            mMotors[2].setPower(leftPower);
-        if (mMotors[3] != null)
-            mMotors[3].setPower(leftPower);
+        // check to see if we're in danger of tipping over
+        boolean danger = (Math.abs(mFDS.pitch()) > 30) || (Math.abs(mFDS.roll()) > 30);
 
-        // log some data
-        mOpMode.telemetry.addData("heading ", heading);
-        mOpMode.telemetry.addData("left power ", leftPower);
-        mOpMode.telemetry.addData("right power ", rightPower);
-        //if (mGyro instanceof ModernRoboticsI2cGyro)
-        //    mOpMode.telemetry.addData("integrated z: ", mGyro.isCalibrating() ? "calibrating" : ((ModernRoboticsI2cGyro) mGyro).getIntegratedZValue());
-
-        // run the motors until the Timer runs out
+        // run the motors until the Timer runs out or we sense danger
         boolean done = mTimer.done();
-        if (done && mStop)
+        if ((done && mStop) || danger)
             for (DcMotor m : mMotors)
-                if (m != null)
-                    m.setPower(0);
+                m.setPower(0);
 
-        return done;
+        return done | danger;       // force "done" when there's danger
     }
 }
 
@@ -97,13 +70,12 @@ public class SensorDriveTestOp extends OpMode {
     AutoLib.Sequence mSequence;     // the root of the sequence tree
     boolean bDone;                  // true when the programmed sequence is done
     DcMotor mMotors[];
-    private GyroSensor mGyro;  // sensor to use for heading information
+    SensorLib.FilteredDirectionSensor mFDS;
 
     @Override
     public void init() {
-
         AutoLib.HardwareFactory mf = null;
-        final boolean debug = false;
+        final boolean debug = true;
         if (debug)
             mf = new AutoLib.TestHardwareFactory(this);
         else
@@ -113,48 +85,39 @@ public class SensorDriveTestOp extends OpMode {
         // either dummy motors that just log data or real ones that drive the hardware
         // assumed order is fr, br, fl, bl
         mMotors = new DcMotor[4];
-        mMotors[0] = mf.getDcMotor("front_right");
-        //mMotors[1] = mf.getDcMotor("br");
-        mMotors[2] = mf.getDcMotor("front_left");
-        //mMotors[3] = mf.getDcMotor("bl");
+        mMotors[0] = mf.getDcMotor("fr");
+        mMotors[1] = mf.getDcMotor("br");
+        mMotors[2] = mf.getDcMotor("fl");
+        mMotors[3] = mf.getDcMotor("bl");
         mMotors[2].setDirection(DcMotor.Direction.REVERSE);
-        //mMotors[3].setDirection(DcMotor.Direction.REVERSE);
+        mMotors[3].setDirection(DcMotor.Direction.REVERSE);
 
-        // get hardware gyro, calibrate it, and get an initial heading from it
-        mGyro = (GyroSensor) hardwareMap.gyroSensor.get("gyro");
-        mGyro.calibrate();
-        while (mGyro.isCalibrating()) {
-            try {Thread.sleep(50);}
-            catch (Exception e) {}
-        }
+        // create a filtered direction sensor and get an initial heading from it
+        final int filterSize = 10;
+        mFDS = new SensorLib.FilteredDirectionSensor(filterSize);
+        mFDS.init();
+        while(mFDS.dataCount() < filterSize)
+            ;  // just wait until data settles ...
+        float initialHeading = mFDS.azimuth();
 
-        // wait for gyro to settle to initial reading (of zero)
-        // without this we get random junk for a couple of seconds at the start (???)
-        while (mGyro.getHeading() != 0);
-
-        // create an autonomous sequence with the steps to drive
-        // several laps of a polygonal course ---
-
-        float heading = 0;      // net absolute heading resulting from sequence of relative turns
-        int numLaps = 3;        // number of laps in the sequence
-        int numSides = 4;       // number of sides in driven polygon
-        boolean CW = false;     // go CCW
-        float legTime = debug ? 10.0f : 2.0f;  // time along each leg of the polygon
+        // create an autonomous sequence with the necessary steps to drive a square course
 
         // create the root Sequence for this autonomous OpMode
         mSequence = new AutoLib.LinearSequence();
 
-        // add a bunch of "legs" to the sequence
-        for (int i = 0; i < numLaps*numSides; i++) {
+        float legTime = debug ? 10.0f : 2.5f;        // time along each leg of the square
 
-            // stop after the last step
-            boolean bStop = i==(numLaps*numSides-1);
+        // add a Step to the root Sequence that drives forward along our initial heading
+        mSequence.add(new AzimuthTimedDriveStep(initialHeading, mFDS, mMotors, 0.5f, legTime, false));
 
-            // add a Step to the root Sequence that drives forward along current heading
-            mSequence.add(new AzimuthTimedDriveStep(this, heading, mGyro, mMotors, 0.5f, legTime, bStop));
+        // add a second Step that turns left 90 degrees and drives along that course
+        mSequence.add(new AzimuthTimedDriveStep(SensorLib.Utils.wrapAngle(initialHeading - 90), mFDS, mMotors, 0.5f, legTime, false));
 
-            heading += (CW ? 1 : -1) * (360/numSides);     // turn relative for next leg
-        }
+        // add a third Step that turns left 90 degrees more and drives along that course
+        mSequence.add(new AzimuthTimedDriveStep(SensorLib.Utils.wrapAngle(initialHeading - 180), mFDS, mMotors, 0.5f, legTime, false));
+
+        // add a fourth Step that turns left 90 degrees more and drives along that course
+        mSequence.add(new AzimuthTimedDriveStep(SensorLib.Utils.wrapAngle(initialHeading - 270), mFDS, mMotors, 0.5f, legTime, true));
 
         // start out not-done
         bDone = false;
@@ -172,7 +135,6 @@ public class SensorDriveTestOp extends OpMode {
     @Override
     public void stop() {
         super.stop();
-        mGyro.close();        // release the sensor we've been using for azimuth data
+        mFDS.stop();        // release the sensor we've been using for azimuth data
     }
 }
-

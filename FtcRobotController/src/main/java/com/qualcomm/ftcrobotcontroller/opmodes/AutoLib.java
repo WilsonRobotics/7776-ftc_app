@@ -2,17 +2,16 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.util.Range;
 
-
-import android.media.MediaPlayer;
-import android.view.textservice.TextInfo;
-
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+
+import android.media.MediaPlayer;
 
 /**
  * Created by phanau on 12/14/15.
@@ -184,8 +183,8 @@ public class AutoLib {
         }
 
     }
-
-    //a Step which plays a song!
+	
+	//a Step which plays a song!
     static public class TimedSongStep extends Step {
         MediaPlayer mMp;
         Timer mTimer;
@@ -220,9 +219,13 @@ public class AutoLib {
         }
     }
 
+    // interface for setting the current power of either kind of MotorStep
+    interface SetPower {
+        public void setPower(double power);
+    }
 
     // a Step that runs a DcMotor at a given power, for a given time
-    static public class TimedMotorStep extends Step {
+    static public class TimedMotorStep extends Step implements SetPower {
         Timer mTimer;
         DcMotor mMotor;
         double mPower;
@@ -235,6 +238,11 @@ public class AutoLib {
             mStop = stop;
         }
 
+        // for dynamic adjustment of power during the Step
+        public void setPower(double power) {
+            mPower = power;
+        }
+
         public boolean loop() {
             super.loop();
 
@@ -248,6 +256,8 @@ public class AutoLib {
             boolean done = mTimer.done();
             if (done && mStop)
                 mMotor.setPower(0);
+            else
+                mMotor.setPower(mPower);        // update power in case it changed
 
             return done;
         }
@@ -256,19 +266,24 @@ public class AutoLib {
 
 
     // a Step that runs a DcMotor at a given power, for a given encoder count
-    static public class EncoderMotorStep extends Step {
+    static public class EncoderMotorStep extends Step implements SetPower {
         EncoderMotor mMotor;    // motor to control
         double mPower;          // power level to use
-        double mEncoderCount;   // target encoder count
+        int mEncoderCount;      // target encoder count
         int mState;             // internal state machine state
         boolean mStop;          // stop motor when count is reached
 
-        public EncoderMotorStep(EncoderMotor motor, double power, double count, boolean stop) {
+        public EncoderMotorStep(EncoderMotor motor, double power, int count, boolean stop) {
             mMotor = motor;
             mPower = power;
             mEncoderCount = count;
             mState = 0;
             mStop = stop;
+        }
+
+        // for dynamic adjustment of power during the Step
+        public void setPower(double power) {
+            mPower = power;
         }
 
         public boolean loop() {
@@ -280,8 +295,8 @@ public class AutoLib {
             switch (mState) {
                 case 0:
                     // reset the encoder on our first call
-                    mMotor.resetEncoder();
-                    mState++;
+                    if (mMotor.resetEncoder())
+                        mState++;
                     break;
                 case 1:
                     // stay in this state until encoder has finished resetting
@@ -290,15 +305,16 @@ public class AutoLib {
                     break;
                 case 2:
                     // enable encoder and set motor power on second call
-                    mMotor.runUsingEncoder();
-                    mMotor.setPower(mPower);
-                    mState++;
+                    if (mMotor.runUsingEncoder() && mMotor.setPower(mPower))
+                        mState++;
                     break;
                 default:
-                    // the rest of the time, just check to see if we're done
+                    // the rest of the time, just update power and check to see if we're done
                     done = mMotor.hasEncoderReached(mEncoderCount);
                     if (done && mStop)
                         mMotor.setPower(0);     // optionally stop motor when target reached
+                    else
+                        mMotor.setPower(mPower);        // update power in case it changed
                     break;
             }
 
@@ -307,209 +323,194 @@ public class AutoLib {
 
     }
 
-    //a class to run a servo to a place for a set time
-    static public class TimedServoStep extends Step {
-        Timer mTimer;
-        Servo mServo;
-        double mPosition;
-        boolean mReturn;          // stop motor when count is reached
-        double lastPosition;
+    // a Step that provides gyro-based guidance to motors controlled by other concurrent Steps (e.g. encoder or time-based)
+    // assumes an even number of concurrent drive motor steps in order right ..., left ...
+    static public class GyroGuideStep extends Step {
+        private float mPower;                               // basic power setting of all 4 motors -- adjusted for steering along path
+        private float mHeading;                             // compass heading to steer for (-180 .. +180 degrees)
+        private OpMode mOpMode;                             // needed so we can log output (may be null)
+        private SensorLib.CorrectedMRGyro mGyro;            // sensor to use for heading information
+        private SensorLib.PID mPid;                         // proportional–integral–derivative controller (PID controller)
+        private double mPrevTime;                           // time of previous loop() call
+        private ArrayList<SetPower> mMotorSteps;            // the motor steps we're guiding - assumed order is right ... left ...
 
-        public TimedServoStep(Servo servo, double position, double seconds, boolean goBack) {
-            mServo = servo;
-            mPosition = position;
-            mTimer = new Timer(seconds);
-            mReturn = goBack;
-            lastPosition = mServo.getPosition();
+        public GyroGuideStep(OpMode mode, float heading, SensorLib.CorrectedMRGyro gyro, SensorLib.PID pid,
+                             ArrayList<SetPower> motorsteps, float power)
+        {
+            mOpMode = mode;
+            mHeading = heading;
+            mGyro = gyro;
+            mPid = pid;
+            mMotorSteps = motorsteps;
+            mPower = power;
         }
 
-        public boolean loop() {
-            super.loop();
-
-            // start the Timer and start the motor on our first call
+        public boolean loop()
+        {
+            // initialize previous-time on our first call -> dt will be zero on first call
             if (firstLoopCall()) {
-                mTimer.start();
-                mServo.setPosition(mPosition);
+                mPrevTime = mOpMode.getRuntime();           // use timer provided by OpMode
             }
 
-            // run the motor at the requested power until the Timer runs out
-            boolean done = mTimer.done();
-            if (done && mReturn)
-               mServo.setPosition(lastPosition);
+            float heading = mGyro.getHeading();     // get latest reading from direction sensor
+            // convention is positive angles CW, wrapping from 359-0
 
-            return done;
+            float error = SensorLib.Utils.wrapAngle(heading-mHeading);   // deviation from desired heading
+            // deviations to left are negative, to right are positive
+
+            // compute delta time since last call -- used for integration time of PID step
+            double time = mOpMode.getRuntime();
+            double dt = time - mPrevTime;
+            mPrevTime = time;
+
+            // feed error through PID to get motor power correction value
+            float correction = mPid.loop(error, (float)dt);
+
+            // compute new right/left motor powers
+            float rightPower = Range.clip(mPower + correction, -1, 1);
+            float leftPower = Range.clip(mPower - correction, -1, 1);
+
+            // set the motor powers -- handle both time-based and encoder-based motor Steps
+            // assumed order is right motors followed by an equal number of  left motors
+            int i = 0;
+            for (SetPower ms : mMotorSteps) {
+                ms.setPower((i++ < mMotorSteps.size()/2) ? rightPower : leftPower);
+            }
+
+            // log some data
+            if (mOpMode != null) {
+                mOpMode.telemetry.addData("heading ", heading);
+                mOpMode.telemetry.addData("left power ", leftPower);
+                mOpMode.telemetry.addData("right power ", rightPower);
+            }
+
+            // guidance step always returns "done" so the CS in which it is embedded completes when
+            // all the motors it's controlling are done
+            return true;
         }
+    }
+
+    // a Step that uses gyro input to drive along a given course for a given distance given by motor encoders.
+    // uses a GyroGuideStep to adjust power to 2-4
+    // assumes a robot with up to 4 drive motors in assumed order fr, br, fl, bl
+    static public class AzimuthTimedDriveStep extends ConcurrentSequence {
+
+        public AzimuthTimedDriveStep(OpMode mode, float heading, SensorLib.CorrectedMRGyro gyro, SensorLib.PID pid,
+                                     DcMotor motors[], float power, float time, boolean stop)
+        {
+            // add a concurrent Step to control each motor
+            ArrayList<SetPower> steps = new ArrayList<SetPower>();
+            for (DcMotor em : motors)
+                if (em != null) {
+                    TimedMotorStep step = new TimedMotorStep(em, power, time, stop);
+                    this.add(step);
+                    steps.add(step);
+                }
+
+            // add a concurrent Step to control the motor steps based on gyro input
+            this.add(new GyroGuideStep(mode, heading, gyro, pid, steps, power));
+
+        }
+
+        // the base class loop function does all we need -- it will return "done" when
+        // all the motors are done.
+
+    }
+
+    // a Step that uses gyro input to drive along a given course for a given distance given by motor encoders.
+    // uses a GyroGuideStep to adjust power to 2-4
+    // assumes a robot with up to 4 drive motors in assumed order fr, br, fl, bl
+    static public class AzimuthCountedDriveStep extends ConcurrentSequence {
+
+        public AzimuthCountedDriveStep(OpMode mode, float heading, SensorLib.CorrectedMRGyro gyro, SensorLib.PID pid,
+                                     EncoderMotor motors[], float power, int count, boolean stop)
+        {
+            // add a concurrent Step to control each motor
+            ArrayList<SetPower> steps = new ArrayList<SetPower>();
+            for (EncoderMotor em : motors)
+                if (em != null) {
+                    EncoderMotorStep step = new EncoderMotorStep(em, power, count, stop);
+                    this.add(step);
+                    steps.add(step);
+                }
+            // add a concurrent Step to control the motor steps based on gyro input
+            this.add(new GyroGuideStep(mode, heading, gyro, pid, steps, power));
+
+        }
+
+        // the base class loop function does all we need -- it will return "done" when
+        // all the motors are done.
 
     }
 
 
     // some convenience utility classes for common operations
 
-    // a Sequence that moves a four-motor robot in a straight line with given power for given time
+    // a Sequence that moves an up-to-four-motor robot in a straight line with given power for given time
     static public class MoveByTime extends ConcurrentSequence {
 
         public MoveByTime(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double power, double seconds, boolean stop) {
-            if(fr != null)
+            if (fr != null)
                 this.add(new TimedMotorStep(fr, power, seconds, stop));
-            if(br != null)
+            if (br != null)
                 this.add(new TimedMotorStep(br, power, seconds, stop));
-            if(fl != null)
+            if (fl != null)
                 this.add(new TimedMotorStep(fl, power, seconds, stop));
-            if(bl != null)
+            if (bl != null)
                 this.add(new TimedMotorStep(bl, power, seconds, stop));
         }
 
     }
 
 
-    // a Sequence that turns a four-motor robot by applying the given right and left powers for given time
+    // a Sequence that turns an up-to-four-motor robot by applying the given right and left powers for given time
     static public class TurnByTime extends ConcurrentSequence {
 
         public TurnByTime(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rightPower, double leftPower, double seconds, boolean stop) {
-            if(fr != null)
+            if (fr != null)
                 this.add(new TimedMotorStep(fr, rightPower, seconds, stop));
-            if(br != null)
+            if (br != null)
                 this.add(new TimedMotorStep(br, rightPower, seconds, stop));
-            if(fl != null)
+            if (fl != null)
                 this.add(new TimedMotorStep(fl, leftPower, seconds, stop));
-            if(fr != null)
+            if (bl != null)
                 this.add(new TimedMotorStep(bl, leftPower, seconds, stop));
         }
 
     }
 
 
-    // a Sequence that moves a four-motor robot in a straight line with given power for given encoder count
+    // a Sequence that moves an up-to-four-motor robot in a straight line with given power for given encoder count
     static public class MoveByEncoder extends ConcurrentSequence {
 
-        public MoveByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rPower, double lPower, double count, boolean stop) {
-            if(fr != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(fr), rPower, count, stop));
-            if(br != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(br), rPower, count, stop));
-            if(fl != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(fl), lPower, count, stop));
-            if(bl != null)
-                this.add(new EncoderMotorStep(new EncoderMotor(bl), lPower, count, stop));
+        public MoveByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double power, int count, boolean stop) {
+            if (fr != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(fr), power, count, stop));
+            if (br != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(br), power, count, stop));
+            if (fl != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(fl), power, count, stop));
+            if (bl != null)
+                this.add(new EncoderMotorStep(new EncoderMotor(bl), power, count, stop));
         }
 
     }
 
 
-    // a Sequence that turns a four-motor robot by applying the given right and left powers for given right and left encoder counts
+    // a Sequence that turns an up-to-four-motor robot by applying the given right and left powers for given right and left encoder counts
     static public class TurnByEncoder extends ConcurrentSequence {
 
-        public TurnByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rightPower, double leftPower, double rightCount, double leftCount, boolean stop) {
-            if(fr != null)
+        public TurnByEncoder(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, double rightPower, double leftPower, int rightCount, int leftCount, boolean stop) {
+            if (fr != null)
                 this.add(new EncoderMotorStep(new EncoderMotor(fr), rightPower, rightCount, stop));
-            if(br != null)
+            if (br != null)
                 this.add(new EncoderMotorStep(new EncoderMotor(br), rightPower, rightCount, stop));
-            if(fl != null)
+            if (fl != null)
                 this.add(new EncoderMotorStep(new EncoderMotor(fl), leftPower, leftCount, stop));
-            if(bl != null)
+            if (bl != null)
                 this.add(new EncoderMotorStep(new EncoderMotor(bl), leftPower, leftCount, stop));
         }
 
-    }
-
-    static public class GyroMotorStep extends Step{
-        GyroSensor mGyro;
-        DcMotor mMotor;
-        double mPower;
-        int mGyroStop;
-        int mGyroLast;
-        double mPrecision;
-        boolean mStop;
-        Timer mTimer;
-        static boolean usingTimer;
-
-        public GyroMotorStep(DcMotor motor, GyroSensor gyro, double power, int gyroStop, double precision, boolean stop) { //pass through gyro
-            usingTimer = false;
-            mMotor = motor;
-            mPower = power;
-            mGyro = gyro;
-            mGyroStop = gyroStop;
-            mPrecision = precision;
-            mStop = stop;
-        }
-
-        public GyroMotorStep(DcMotor motor, GyroSensor gyro, double power, int gyroHold, boolean stop, int time){
-            usingTimer = true;
-            mMotor = motor;
-            mGyro = gyro;
-            mPower = power;
-            mGyroStop = gyroHold;
-            mStop = stop;
-            mTimer = new Timer(time);
-        }
-
-        public boolean loop() {
-            super.loop();
-
-            int gyroChange = mGyro.getHeading() - mGyroLast;
-            if(gyroChange > 100) gyroChange -= 360;
-            // start the Timer and start the motor on our first call
-            if (firstLoopCall()) {
-                mMotor.setPower(mPower);
-                mGyroLast = mGyro.getHeading();
-            }
-            else if(!usingTimer){
-                double scaledPower = ((gyroChange * 2) / 360.0) * mPower; //scales power down as robot gets closer
-                if(Math.abs(scaledPower) == scaledPower)
-                    scaledPower = Range.clip(scaledPower, 0.2, 1.0);
-                else
-                    scaledPower = Range.clip(scaledPower, -1.0, -0.2);
-                mMotor.setPower(scaledPower);
-            }
-            else{
-                double scaledPower = mPower - (gyroChange/360.0 * mPower);
-                if(Math.abs(scaledPower) == scaledPower)
-                    scaledPower = Range.clip(scaledPower, mPower, 1.0);
-                else
-                    scaledPower = Range.clip(scaledPower, -1.0, mPower);
-                mMotor.setPower(scaledPower);
-            }
-
-            // run the motor at the requested power until the Timer runs out
-            boolean done;
-            if(!usingTimer) done = (mGyroStop <= (mGyroStop + (mGyroStop * mPrecision)) && (mGyroStop <= (mGyroStop - (mGyroStop * mPrecision))));
-            else done = mTimer.done();
-
-            if (done && mStop)
-                mMotor.setPower(0);
-
-            return done;
-        }
-    }
-
-    static public class TurnByGyro extends ConcurrentSequence{
-
-        public TurnByGyro(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, GyroSensor gyro, double leftPower, double rightPower, int gyroCount, double precision, boolean stop) {
-            //reset gyro
-            if(fr != null)
-                this.add(new GyroMotorStep(fr, gyro, rightPower, gyroCount, precision, stop));
-            if(br != null)
-                this.add(new GyroMotorStep(br, gyro, rightPower, gyroCount, precision, stop));
-            if(fl != null)
-                this.add(new GyroMotorStep(fl, gyro, leftPower, gyroCount, precision, stop));
-            if(bl != null)
-                this.add(new GyroMotorStep(bl, gyro, leftPower, gyroCount, precision, stop));
-        }
-
-    }
-
-    static public class MoveByGyro extends ConcurrentSequence{
-
-        public  MoveByGyro(DcMotor fr, DcMotor br, DcMotor fl, DcMotor bl, GyroSensor gyro, double power, int time, double precision, boolean stop){
-            if(fr != null)
-                this.add(new GyroMotorStep(fr, gyro, power, 0, stop, time));
-            if(br != null)
-                this.add(new GyroMotorStep(br, gyro, power, 0, stop, time));
-            if(fl != null)
-                this.add(new GyroMotorStep(fl, gyro, power, 0, stop, time));
-            if(bl != null)
-                this.add(new GyroMotorStep(bl, gyro, power, 0, stop, time));
-        }
     }
 
 
@@ -551,23 +552,73 @@ public class AutoLib {
         OpMode mOpMode;     // needed for logging data
         String mName;       // string id of this motor
         double mPower;      // current power setting
+        DcMotorController.RunMode mMode;
+        int mTargetPosition;
+        int mCurrentPosition;
+        boolean mPowerFloat;
 
         public TestMotor(String name, OpMode opMode) {
             super(null, 0);     // init base class (real DcMotor) with dummy data
             mOpMode = opMode;
             mName = name;
             mPower = 0.0;
+            mMode = DcMotorController.RunMode.RUN_WITHOUT_ENCODERS;
+            mTargetPosition = 0;
+            mCurrentPosition = 0;
+            mPowerFloat = false;
         }
 
-        @Override       // this function overrides the setPower() function of the real DcMotor class
+        @Override       // override all the functions of the real DcMotor class that touch hardware
         public void setPower(double power) {
             mPower = power;
             mOpMode.telemetry.addData(mName, " power: " + String.valueOf(mPower));
         }
 
-        @Override       // this function overrides the getPower() function of the real DcMotor class
         public double getPower() {
             return mPower;
+        }
+
+        public void close() {
+            mOpMode.telemetry.addData(mName, " close();");
+        }
+
+        public boolean isBusy() {
+            return false;
+        }
+
+        public void setPowerFloat() {
+            mPowerFloat = true;
+            mOpMode.telemetry.addData(mName, " setPowerFloat();");
+        }
+
+        public boolean getPowerFloat() {
+            return mPowerFloat;
+        }
+
+        public void setTargetPosition(int position) {
+            mTargetPosition = position;
+            mOpMode.telemetry.addData(mName, "target: " + String.valueOf(position));
+        }
+
+        public int getTargetPosition() {
+            return mTargetPosition;
+        }
+
+        public int getCurrentPosition() {
+            return mTargetPosition;
+        }
+
+        public void setMode(DcMotorController.RunMode mode) {
+            this.mMode = mode;
+            mOpMode.telemetry.addData(mName, "run mode: " + String.valueOf(mode));
+        }
+
+        public DcMotorController.RunMode getMode() {
+            return this.mMode;
+        }
+
+        public String getConnectionInfo() {
+            return mName + " port: unknown";
         }
     }
 
@@ -594,6 +645,11 @@ public class AutoLib {
         @Override       // this function overrides the getPower() function of the real DcMotor class
         public double getPosition() {
             return mPosition;
+        }
+
+        @Override       // override all other functions of Servo that touch the hardware
+        public String getConnectionInfo() {
+            return mName + " port: unknown";
         }
     }
 
@@ -629,11 +685,35 @@ public class AutoLib {
         }
 
         public DcMotor getDcMotor(String name){
-            return mOpMode.hardwareMap.dcMotor.get(name);
+            DcMotor motor = null;
+            try {
+                motor = mOpMode.hardwareMap.dcMotor.get(name);
+            }
+            catch (Exception e) {
+                // okay -- just return null (absent) for this motor
+            }
+
+            // just to make sure - a previous OpMode may have set it differently ...
+            if (motor != null)
+                motor.setDirection(DcMotor.Direction.FORWARD);
+
+            return motor;
         }
 
         public Servo getServo(String name){
-            return mOpMode.hardwareMap.servo.get(name);
+            Servo servo = null;
+            try {
+                servo = mOpMode.hardwareMap.servo.get(name);
+            }
+            catch (Exception e) {
+                // okay - just return null (absent) for this servo
+            }
+
+            // just to make sure - a previous OpMode may have set it differently ...
+            if (servo != null)
+                servo.setDirection(Servo.Direction.FORWARD);
+            
+            return servo;
         }
     }
 
