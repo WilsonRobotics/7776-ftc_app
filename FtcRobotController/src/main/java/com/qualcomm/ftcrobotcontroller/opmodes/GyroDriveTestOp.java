@@ -3,6 +3,7 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 
 /**
@@ -21,6 +22,18 @@ public class GyroDriveTestOp extends OpMode {
     SensorLib.CorrectedMRGyro mCorrGyro;    // gyro corrector object 
     boolean bSetup;                         // true when we're in "setup mode" where joysticks tweak parameters
     SensorLib.PID mPid;                     // PID controller for the sequence
+    Servo leftArm;
+    Servo rightArm;
+    Servo bucket;
+
+    private static final String release1Name = "dropit1";
+    private static final String release2Name = "dropit2";
+    private static final String bucketName = "bucket";
+    private static final double flappyArmPowerUp = 0.65;
+    private static final double flappyArmPowerDown = 0.1;
+    private static final double rightOffset = 0.08; //negative offset for the right servo
+    private static final double bucketPowerUp = 0;
+    private static final double bucketPowerDown = 0.90;
 
     // parameters of the PID controller for this sequence
     float Kp = 0.035f;        // motor power proportional term correction per degree of deviation
@@ -37,6 +50,16 @@ public class GyroDriveTestOp extends OpMode {
             mf = new AutoLib.TestHardwareFactory(this);
         else
             mf = new AutoLib.RealHardwareFactory(this);
+
+        leftArm = hardwareMap.servo.get(release1Name);
+        rightArm = hardwareMap.servo.get(release2Name);
+        bucket = hardwareMap.servo.get(bucketName);
+        leftArm.setDirection(Servo.Direction.FORWARD);
+        rightArm.setDirection(Servo.Direction.REVERSE);
+        bucket.setPosition(bucketPowerDown);
+        leftArm.setPosition(flappyArmPowerDown);
+        rightArm.setPosition(flappyArmPowerDown - rightOffset);
+
 
         // get the motors: depending on the factory we created above, these may be
         // either dummy motors that just log data or real ones that drive the hardware
@@ -76,7 +99,8 @@ public class GyroDriveTestOp extends OpMode {
                 if(mMotors[i] != null) mEM[i] = new EncoderMotor(mMotors[i]);
                 else mEM[i] = null;
             }
-            int leg = 4000;  // motor-encoder count along each leg of the polygon
+            int leg = 5000;  // motor-encoder count along each leg of the polygon
+
             mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mCorrGyro, mPid, mEM, power, leg * 2, false));
             mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -90, mCorrGyro, mPid, mEM, power, leg, false));
             mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -180, mCorrGyro, mPid, mEM, power, leg * 2, false));

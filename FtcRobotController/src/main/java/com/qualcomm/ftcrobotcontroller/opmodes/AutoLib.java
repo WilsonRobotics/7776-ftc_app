@@ -222,6 +222,8 @@ public class AutoLib {
     // interface for setting the current power of either kind of MotorStep
     interface SetPower {
         public void setPower(double power);
+        public void endStep();
+        public boolean isDone();
     }
 
     // a Step that runs a DcMotor at a given power, for a given time
@@ -230,17 +232,27 @@ public class AutoLib {
         DcMotor mMotor;
         double mPower;
         boolean mStop;          // stop motor when count is reached
+        boolean mFinish;
 
         public TimedMotorStep(DcMotor motor, double power, double seconds, boolean stop) {
             mMotor = motor;
             mPower = power;
             mTimer = new Timer(seconds);
             mStop = stop;
+            mFinish = false;
         }
 
         // for dynamic adjustment of power during the Step
         public void setPower(double power) {
             mPower = power;
+        }
+
+        public void endStep(){
+            mFinish=true;
+        }
+
+        public boolean isDone(){
+            return mFinish;
         }
 
         public boolean loop() {
@@ -253,13 +265,14 @@ public class AutoLib {
             }
 
             // run the motor at the requested power until the Timer runs out
-            boolean done = mTimer.done();
+            boolean done = mTimer.done() || mFinish;
             if (done && mStop)
                 mMotor.setPower(0);
             else
                 mMotor.setPower(mPower);        // update power in case it changed
 
-            return done;
+            mFinish = done;
+            return mFinish;
         }
 
     }
@@ -272,6 +285,7 @@ public class AutoLib {
         int mEncoderCount;      // target encoder count
         int mState;             // internal state machine state
         boolean mStop;          // stop motor when count is reached
+        boolean mFinish;
 
         public EncoderMotorStep(EncoderMotor motor, double power, int count, boolean stop) {
             mMotor = motor;
@@ -279,11 +293,20 @@ public class AutoLib {
             mEncoderCount = count;
             mState = 0;
             mStop = stop;
+            mFinish = false;
         }
 
         // for dynamic adjustment of power during the Step
         public void setPower(double power) {
             mPower = power;
+        }
+
+        public void endStep(){
+            mFinish = true;
+        }
+
+        public boolean isDone(){
+            return mFinish;
         }
 
         public boolean loop() {
@@ -310,15 +333,15 @@ public class AutoLib {
                     break;
                 default:
                     // the rest of the time, just update power and check to see if we're done
-                    done = mMotor.hasEncoderReached(mEncoderCount);
+                    done = mMotor.hasEncoderReached(mEncoderCount) || mFinish;
                     if (done && mStop)
                         mMotor.setPower(0);     // optionally stop motor when target reached
                     else
                         mMotor.setPower(mPower);        // update power in case it changed
                     break;
             }
-
-            return done;
+            mFinish = done;
+            return mFinish;
         }
 
     }
@@ -377,11 +400,21 @@ public class AutoLib {
                 ms.setPower((i++ < mMotorSteps.size()/2) ? rightPower : leftPower);
             }
 
+            boolean finished = false;
+            for(SetPower ms: mMotorSteps){
+                finished = finished || ms.isDone();
+            }
+
+            if(finished) {
+                for(SetPower ms : mMotorSteps) ms.endStep();
+            }
+
             // log some data
             if (mOpMode != null) {
                 mOpMode.telemetry.addData("heading ", heading);
                 mOpMode.telemetry.addData("left power ", leftPower);
                 mOpMode.telemetry.addData("right power ", rightPower);
+                mOpMode.telemetry.addData("Done boolean ", finished);
             }
 
             // guidance step always returns "done" so the CS in which it is embedded completes when
@@ -440,6 +473,41 @@ public class AutoLib {
 
         // the base class loop function does all we need -- it will return "done" when
         // all the motors are done.
+
+    }
+
+    //a class to run a servo to a place for a set time
+    static public class TimedServoStep extends Step {
+        Timer mTimer;
+        Servo mServo;
+        double mPosition;
+        boolean mReturn;          // stop motor when count is reached
+        double lastPosition;
+
+        public TimedServoStep(Servo servo, double position, double seconds, boolean goBack) {
+            mServo = servo;
+            mPosition = position;
+            mTimer = new Timer(seconds);
+            mReturn = goBack;
+            lastPosition = mServo.getPosition();
+        }
+
+        public boolean loop() {
+            super.loop();
+
+            // start the Timer and start the motor on our first call
+            if (firstLoopCall()) {
+                mTimer.start();
+                mServo.setPosition(mPosition);
+            }
+
+            // run the motor at the requested power until the Timer runs out
+            boolean done = mTimer.done();
+            if (done && mReturn)
+                mServo.setPosition(lastPosition);
+
+            return done;
+        }
 
     }
 
