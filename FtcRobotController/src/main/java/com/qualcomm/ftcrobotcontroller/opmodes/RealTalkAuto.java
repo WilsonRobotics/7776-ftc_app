@@ -112,7 +112,7 @@ public class RealTalkAuto extends OpMode {
 
         mainSequence = new AutoLib.LinearSequence();
 
-        //mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
         //drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
