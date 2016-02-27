@@ -41,8 +41,8 @@ public class Teleop extends OpMode {
     private static final double bucketPowerDown = 0.90;
     private static final double wingPowerUp = 0.55;
     private static final double wingPowerDown = 0.1;
-    private static final double flagPullPowerUp = 0.0;
-    private static final double flagPullPowerDown = 0.5;
+    private static final double flagPullPowerUp = 1.0;
+    private static final double flagPullPowerDown = 0.0;
 
     // keep track of the last state of controller buttons for toggles
     private boolean leftBumperLastVal = false;
@@ -89,11 +89,15 @@ public class Teleop extends OpMode {
         tapeMotor2.setDirection(DcMotor.Direction.FORWARD);
         leftWing.setDirection(Servo.Direction.FORWARD);
         rightWing.setDirection(Servo.Direction.REVERSE);
+        leftFlagPull.setDirection(Servo.Direction.FORWARD);
+        rightFlagPull.setDirection(Servo.Direction.REVERSE);
 
         // set initial servo positions
         leftWing.setPosition(wingPowerDown);
         rightWing.setPosition(wingPowerDown);
         bucket.setPosition(bucketPowerDown);
+        leftFlagPull.setPosition(flagPullPowerDown);
+        rightFlagPull.setPosition(flagPullPowerDown+0.04);
     }
 
     @Override
@@ -137,7 +141,7 @@ public class Teleop extends OpMode {
         if(flagPullLeftPos) leftFlagPull.setPosition(flagPullPowerUp);
         else leftFlagPull.setPosition(flagPullPowerDown);
         if(flagPullRightPos) rightFlagPull.setPosition(flagPullPowerUp);
-        else rightFlagPull.setPosition(flagPullPowerDown);
+        else rightFlagPull.setPosition(flagPullPowerDown + 0.04);
 
         // record controller button states for toggles
         leftTriggerLastVal = gamepad2.left_trigger > triggerThresh;
