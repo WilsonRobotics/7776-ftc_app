@@ -60,7 +60,7 @@ public class FtcOpModeRegister implements OpModeRegister {
     manager.register("Red Auto", RealTalkAutoRed.class);
     manager.register("Hyro Square Auto", GyroDriveTestOp.class);
     manager.register("Gyro read", GyroTestOp.class);
-
+    manager.register("ratbot", RatBot.class);
 
 
 

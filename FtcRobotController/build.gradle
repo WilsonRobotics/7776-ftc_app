@@ -1,6 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+        }
+    }
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 19
