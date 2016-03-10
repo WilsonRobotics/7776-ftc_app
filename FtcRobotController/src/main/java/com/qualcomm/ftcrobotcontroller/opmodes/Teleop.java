@@ -98,6 +98,7 @@ public class Teleop extends OpMode {
         bucket.setPosition(bucketPowerDown);
         leftFlagPull.setPosition(flagPullPowerDown);
         rightFlagPull.setPosition(flagPullPowerDown+0.04);
+        runTape(0);
     }
 
     @Override

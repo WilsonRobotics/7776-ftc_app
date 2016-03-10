@@ -104,7 +104,6 @@ public class RealTalkAutoRed extends OpMode {
         emp = new MediaPlayer();
 
         mCorrGyro = new SensorLib.CorrectedMRGyro(mGyro1);
-        mCorrGyro.calibrate();
 
         // create a PID controller for the sequence
         mPid = new SensorLib.PID(Kp, Ki, Kd, KiCutoff);    // make the object that implements PID control algorithm
@@ -113,7 +112,7 @@ public class RealTalkAutoRed extends OpMode {
 
         mainSequence = new AutoLib.LinearSequence();
 
-        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 11 Seconds", 11));
+        mainSequence.add(new AutoLib.LogTimeStep(this, "Waiting 8 Seconds", 8));
 
         AutoLib.LinearSequence drivingToBox = new AutoLib.LinearSequence();
         //drivingToBox.add(new AutoLib.TurnByEncoder(front_right, null, front_left, null,
@@ -141,7 +140,7 @@ public class RealTalkAutoRed extends OpMode {
         servoStep.add(new AutoLib.TimedServoStep(bucket, bucketPowerDown, 1.0, false));
         dropClimbers.add(servoStep);
         dropClimbers.add(new AutoLib.TimedSongStep(mp, "/storage/emulated/0/BUCKETS.mp3", 1));
-        mainSequence.add(dropClimbers);
+        //mainSequence.add(dropClimbers);
 
         AutoLib.LinearSequence playingAwesome = new AutoLib.LinearSequence();
         playingAwesome.add(new AutoLib.TimedSongStep(emp, "/storage/emulated/0/JOHNCENA.mp3", 10000));
@@ -150,6 +149,10 @@ public class RealTalkAutoRed extends OpMode {
         // start out not-done
         bDone = false;
 
+    }
+
+    public void start(){
+        mCorrGyro.calibrate();
     }
 
     public void loop() {
