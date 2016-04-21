@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 /**
  * simple example of using a Step that uses gyro input to drive along a given course for a given time
  * Created by phanau on 1/3/16 as SensorDriveTestOp, modified 1/22/16 to use Gyro, renamed GyroDriveTestOp 2/16/16.
- */
+**/
 
 
 // simple example sequence that tests either of gyro-based AzimuthCountedDriveStep or AzimuthTimedDriveStep to drive along a square path
@@ -18,8 +18,7 @@ public class GyroDriveTestOp extends OpMode {
     AutoLib.Sequence mSequence;             // the root of the sequence tree
     boolean bDone;                          // true when the programmed sequence is done
     DcMotor mMotors[];                      // motors, some of which can be null: assumed order is fr, br, fl, bl
-    ModernRoboticsI2cGyro mGyro1, mGyro2;   // gyro(s) to use for heading information
-    SensorLib.CorrectedMRGyro mCorrGyro;    // gyro corrector object 
+    navXGyro mGyro;
     boolean bSetup;                         // true when we're in "setup mode" where joysticks tweak parameters
     SensorLib.PID mPid;                     // PID controller for the sequence
     Servo leftArm;
@@ -36,10 +35,10 @@ public class GyroDriveTestOp extends OpMode {
     private static final double bucketPowerDown = 0.90;
 
     // parameters of the PID controller for this sequence
-    float Kp = 0.035f;        // motor power proportional term correction per degree of deviation
-    float Ki = 0.02f;         // ... integrator term
+    float Kp = 0.10f;        // motor power proportional term correction per degree of deviation
+    float Ki = 0.08f;         // ... integrator term
     float Kd = 0;             // ... derivative term
-    float KiCutoff = 3.0f;    // maximum angle error for which we update integrator
+    float KiCutoff = 0.0f;    // maximum angle error for which we update integrator
 
     @Override
     public void init() {
@@ -70,27 +69,22 @@ public class GyroDriveTestOp extends OpMode {
         (mMotors[2] = mf.getDcMotor("front_left")).setDirection(DcMotor.Direction.FORWARD);
         mMotors[3] = null;
 
-        // get hardware gyro(s) -- we support either one or two, where the second is assumed
-        // to be mounted in opposite z-orientation to the first.
-        mGyro1 = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro1");
-        try { mGyro2 = (ModernRoboticsI2cGyro) hardwareMap.gyroSensor.get("gyro2"); }
-        catch (Exception e) { mGyro2 = null; }
+        // get hardware gyro(s)
+        mGyro = new navXGyro(hardwareMap.deviceInterfaceModule.get("dim"), 0);
+        telemetry.addData("Offset: ", mGyro.calibrate());
 
-        // wrap gyro(s) in an object that calibrates them and corrects their output
-        mCorrGyro = new SensorLib.CorrectedMRGyro(mGyro1, mGyro2);
-        mCorrGyro.calibrate();
 
         // create a PID controller for the sequence
         mPid = new SensorLib.PID(Kp, Ki, Kd, KiCutoff);    // make the object that implements PID control algorithm
 
         // create an autonomous sequence with the steps to drive
         // several legs of a polygonal course ---
-        float power = 0.5f;
+        float power = 1.0f;
 
         // create the root Sequence for this autonomous OpMode
         mSequence = new AutoLib.LinearSequence();
 
-        boolean bUseEncoders = true;
+        boolean bUseEncoders = false;
         if (bUseEncoders) {
             // add a bunch of encoder-counted "legs" to the sequence - use Gyro heading convention of positive degrees CW from initial heading
             // wrap motors to simplify use of encoders
@@ -101,36 +95,36 @@ public class GyroDriveTestOp extends OpMode {
             }
             int leg = 5000;  // motor-encoder count along each leg of the polygon
 
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mCorrGyro, mPid, mEM, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -90, mCorrGyro, mPid, mEM, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -180, mCorrGyro, mPid, mEM, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -270, mCorrGyro, mPid, mEM, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mCorrGyro, mPid, mEM, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -90, mCorrGyro, mPid, mEM, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mCorrGyro, mPid, mEM, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 90, mCorrGyro, mPid, mEM, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 180, mCorrGyro, mPid, mEM, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 270, mCorrGyro, mPid, mEM, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mCorrGyro, mPid, mEM, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 90, mCorrGyro, mPid, mEM, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 180, mCorrGyro, mPid, mEM, power, leg * 4, true));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mGyro, mPid, mEM, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -90, mGyro, mPid, mEM, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -180, mGyro, mPid, mEM, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -270, mGyro, mPid, mEM, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mGyro, mPid, mEM, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, -90, mGyro, mPid, mEM, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mGyro, mPid, mEM, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 90, mGyro, mPid, mEM, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 180, mGyro, mPid, mEM, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 270, mGyro, mPid, mEM, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 0, mGyro, mPid, mEM, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 90, mGyro, mPid, mEM, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthCountedDriveStep(this, 180, mGyro, mPid, mEM, power, leg * 4, true));
         }
         else {
             // add a bunch of timed "legs" to the sequence - use Gyro heading convention of positive degrees CW from initial heading
-            float leg = debug ? 10.0f : 3.0f;  // time along each leg of the polygon
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mCorrGyro, mPid, mMotors, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -90, mCorrGyro, mPid, mMotors, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -180, mCorrGyro, mPid, mMotors, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -270, mCorrGyro, mPid, mMotors, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mCorrGyro, mPid, mMotors, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -90, mCorrGyro, mPid, mMotors, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mCorrGyro, mPid, mMotors, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 90, mCorrGyro, mPid, mMotors, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 180, mCorrGyro, mPid, mMotors, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 270, mCorrGyro, mPid, mMotors, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mCorrGyro, mPid, mMotors, power, leg * 2, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 90, mCorrGyro, mPid, mMotors, power, leg, false));
-            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 180, mCorrGyro, mPid, mMotors, power, leg * 4, true));
+            float leg = debug ? 10.0f : 5.0f;  // time along each leg of the polygon
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mGyro, mPid, mMotors, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -90, mGyro, mPid, mMotors, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -180, mGyro, mPid, mMotors, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -270, mGyro, mPid, mMotors, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mGyro, mPid, mMotors, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, -90, mGyro, mPid, mMotors, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mGyro, mPid, mMotors, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 90, mGyro, mPid, mMotors, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 180, mGyro, mPid, mMotors, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 270, mGyro, mPid, mMotors, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 0, mGyro, mPid, mMotors, power, leg * 2, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 90, mGyro, mPid, mMotors, power, leg, false));
+            mSequence.add(new AutoLib.AzimuthTimedDriveStep(this, 180, mGyro, mPid, mMotors, power, leg * 4, true));
         }
 
         // start out not-done
@@ -167,7 +161,7 @@ public class GyroDriveTestOp extends OpMode {
     @Override
     public void stop() {
         super.stop();
-        mCorrGyro.stop();        // release the physical sensor(s) we've been using for azimuth data
+        mGyro.stop();        // release the physical sensor(s) we've been using for azimuth data
     }
 }
 
