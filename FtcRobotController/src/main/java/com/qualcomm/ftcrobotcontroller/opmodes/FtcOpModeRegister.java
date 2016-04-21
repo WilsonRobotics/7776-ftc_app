@@ -58,10 +58,10 @@ public class FtcOpModeRegister implements OpModeRegister {
     manager.register("USE THIS TELEOP", Teleop.class);
     manager.register("Blue Auto", RealTalkAuto.class);
     manager.register("Red Auto", RealTalkAutoRed.class);
-    manager.register("Hyro Square Auto", GyroDriveTestOp.class);
-    manager.register("Gyro read", GyroTestOp.class);
+    manager.register("Gyro Drive", GyroDriveTestOp.class);
     manager.register("ratbot", RatBot.class);
-
+    manager.register("NavX Processes", navXProcessedOp.class);
+    manager.register("NavX Raw", navXRawOp.class);
 
 
     /*

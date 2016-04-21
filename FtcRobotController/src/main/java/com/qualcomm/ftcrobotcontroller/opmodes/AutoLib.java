@@ -346,18 +346,25 @@ public class AutoLib {
 
     }
 
+    //interface for universal gyro implementation
+    public interface universalGyro{
+        public float getHeading();
+        public float calibrate();
+        public void stop();
+    }
+
     // a Step that provides gyro-based guidance to motors controlled by other concurrent Steps (e.g. encoder or time-based)
     // assumes an even number of concurrent drive motor steps in order right ..., left ...
     static public class GyroGuideStep extends Step {
         private float mPower;                               // basic power setting of all 4 motors -- adjusted for steering along path
         private float mHeading;                             // compass heading to steer for (-180 .. +180 degrees)
         private OpMode mOpMode;                             // needed so we can log output (may be null)
-        private SensorLib.CorrectedMRGyro mGyro;            // sensor to use for heading information
+        private universalGyro mGyro;
         private SensorLib.PID mPid;                         // proportional–integral–derivative controller (PID controller)
         private double mPrevTime;                           // time of previous loop() call
         private ArrayList<SetPower> mMotorSteps;            // the motor steps we're guiding - assumed order is right ... left ...
 
-        public GyroGuideStep(OpMode mode, float heading, SensorLib.CorrectedMRGyro gyro, SensorLib.PID pid,
+        public GyroGuideStep(OpMode mode, float heading, universalGyro gyro, SensorLib.PID pid,
                              ArrayList<SetPower> motorsteps, float power)
         {
             mOpMode = mode;
@@ -428,7 +435,7 @@ public class AutoLib {
     // assumes a robot with up to 4 drive motors in assumed order fr, br, fl, bl
     static public class AzimuthTimedDriveStep extends ConcurrentSequence {
 
-        public AzimuthTimedDriveStep(OpMode mode, float heading, SensorLib.CorrectedMRGyro gyro, SensorLib.PID pid,
+        public AzimuthTimedDriveStep(OpMode mode, float heading, universalGyro gyro, SensorLib.PID pid,
                                      DcMotor motors[], float power, float time, boolean stop)
         {
             // add a concurrent Step to control each motor
@@ -455,7 +462,7 @@ public class AutoLib {
     // assumes a robot with up to 4 drive motors in assumed order fr, br, fl, bl
     static public class AzimuthCountedDriveStep extends ConcurrentSequence {
 
-        public AzimuthCountedDriveStep(OpMode mode, float heading, SensorLib.CorrectedMRGyro gyro, SensorLib.PID pid,
+        public AzimuthCountedDriveStep(OpMode mode, float heading, universalGyro gyro, SensorLib.PID pid,
                                      EncoderMotor motors[], float power, int count, boolean stop)
         {
             // add a concurrent Step to control each motor
