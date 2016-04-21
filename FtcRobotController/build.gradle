@@ -29,9 +29,6 @@ repositories {
     flatDir {
         dirs 'libs'
     }
-    flatDir {
-        dirs 'libs', 'C:/navx-micro/android/libs'
-    }
 }
 
 allprojects {
@@ -51,5 +48,4 @@ dependencies {
     compile(name: 'ModernRobotics-release', ext: 'aar')
     compile(name: 'Analytics-release', ext: 'aar')
     compile(name: 'WirelessP2p-release', ext: 'aar')
-    compile (name:'navx_ftc-release', ext:'aar')
 }

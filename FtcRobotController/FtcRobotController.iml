@@ -77,7 +77,6 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/ModernRobotics-release/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/RobotCore-release/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/WirelessP2p-release/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/navx_ftc-release/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/jacoco" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/javaResources" />
@@ -102,6 +101,5 @@
     <orderEntry type="library" exported="" name="android-support-v4" level="project" />
     <orderEntry type="library" exported="" name="Hardware-release-" level="project" />
     <orderEntry type="library" exported="" name="FtcCommon-release-" level="project" />
-    <orderEntry type="library" exported="" name="navx_ftc-release-" level="project" />
   </component>
 </module>
